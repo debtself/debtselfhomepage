@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>debtself — Settle Your Own Debt. Keep the Fees.</title>
+<meta name="description" content="Word-for-word negotiation scripts, creditor intelligence, and a full settlement pipeline. $249 flat fee. No lawyers. No commission."/>
+<meta name="robots" content="noindex"/>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet"/>
+
+<!-- PostHog -->
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+" (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureFlagEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+
+posthog.init('phc_sfRoGkHfkPRoqSvbKYSeFLzSuSAUPVjHiY9nXyHaQg4F', {
+  person_profiles:  'always',
+  api_host:         'https://us.i.posthog.com',
+  capture_pageview: true,
+  capture_pageleave: true,
+  autocapture:      false,
+});
+</script>
+
+<!-- Reddit Pixel -->
+<script>
+!function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];var t=d.createElement('script');t.src='https://www.redditstatic.com/ads/pixel.js';t.async=!0;var s=d.getElementsByTagName('script')[0];s.parentNode.insertBefore(t,s)}}(window,document);
+rdt('init', 'a2_j3y2af268y5o');
+rdt('track', 'PageVisit');
+</script>
+
+<!-- Microsoft UET Tag -->
+<script>(function(w, d, t, u, o) {w[u] = w[u] || [], o.ts = (new Date).getTime();var n = d.createElement(t);n.src = "https://bat.bing.net/bat.js?ti=" + o.ti + ("uetq" != u ? "&q=" + u : ""),n.async = 1, n.onload = n.onreadystatechange = function() {var s = this.readyState;s && "loaded" !== s && "complete" !== s ||(o.q = w[u], w[u] = new UET(o), w[u].push("pageLoad"),n.onload = n.onreadystatechange = null)};var i = d.getElementsByTagName(t)[0];i.parentNode.insertBefore(n, i);})(window, document, "script", "uetq", {ti: "187256574", enableAutoSpaTracking: true});</script>
+
+<!-- Pinterest Tag -->
+<script>
+!function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");
+pintrk('load', '2614356370811');
+pintrk('page');
+</script>
+<noscript>
+  <img height="1" width="1" style="display:none;" alt=""
+    src="https://ct.pinterest.com/v3/?event=init&tid=2614356370811&noscript=1"/>
+</noscript>
+
+<style>
+/* ── Reset & base ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: #0A0E12;
+  color: #F5F0E8;
+  font-family: 'Familjen Grotesk', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Section wrapper ── */
+.s {
+  padding: 64px 24px;
+}
+@media (min-width: 768px) {
+  .s { padding: 80px 40px; }
+}
+
+/* ── HEADER ── */
+.lp-header {
+  padding: 20px 24px;
+  background: #0A0E12;
+  border-bottom: 1px solid rgba(245, 240, 232, 0.06);
+}
+.lp-wm {
+  display: inline-block;
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: #F5F0E8;
+  text-decoration: none;
+  line-height: 1;
+}
+.lp-wm-slash { color: #FF4D2E; }
+
+/* ── HERO ── */
+.hero-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 64px 24px 0;
+}
+@media (min-width: 768px) {
+  .hero-wrap { padding: 80px 40px 0; }
+}
+.hero-eyebrow {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #FF4D2E;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hero-headline {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 42px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: #F5F0E8;
+  margin-top: 12px;
+}
+@media (min-width: 768px) {
+  .hero-headline { font-size: 52px; }
+}
+.hero-headline .serif-accent {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #FF4D2E;
+  letter-spacing: 0;
+}
+.hero-sub {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: rgba(245, 240, 232, 0.65);
+  line-height: 1.6;
+  max-width: 520px;
+  margin-top: 20px;
+}
+
+/* ── CTA BLOCK (shared by sections 3 & 9) ── */
+.cta-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cta-wrap.hero-cta { margin-top: 32px; }
+@media (min-width: 768px) {
+  .cta-wrap { padding: 0 40px; }
+}
+.btn-cta {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  background: #FF4D2E;
+  color: #fff;
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 18px 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-cta:hover { background: #e63d1e; }
+.cta-micro {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 13px;
+  color: rgba(245, 240, 232, 0.5);
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* ── SCREENSHOTS ── */
+.screenshots-wrap {
+  max-width: 900px;
+  margin: 64px auto 0;
+  padding: 0 24px 64px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media (min-width: 768px) {
+  .screenshots-wrap {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 80px;
+    padding: 0 40px 80px;
+  }
+}
+.screenshot-item { display: flex; flex-direction: column; }
+.screenshot-item img {
+  width: 100%;
+  display: block;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+}
+.screenshot-caption {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 13px;
+  color: rgba(245, 240, 232, 0.5);
+  text-align: center;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  height: 1px;
+  background: rgba(245, 240, 232, 0.06);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── TRUST ROW ── */
+.trust-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 560px;
+  margin: 0 auto;
+  gap: 0;
+}
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #F5F0E8;
+  padding: 10px 20px;
+  border-right: 1px solid rgba(245, 240, 232, 0.1);
+}
+.trust-item:last-child { border-right: none; }
+.trust-check { color: #FF4D2E; font-weight: 700; flex-shrink: 0; }
+@media (max-width: 480px) {
+  .trust-item {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ── FEE CONTRAST ── */
+.fee-wrap {
+  display: flex;
+  gap: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  border: 1px solid rgba(245, 240, 232, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.fee-col {
+  flex: 1;
+  padding: 28px 24px;
+  text-align: center;
+}
+.fee-col + .fee-col {
+  border-left: 1px solid rgba(245, 240, 232, 0.08);
+}
+.fee-col-right {
+  background: rgba(255, 77, 46, 0.05);
+  border-left-color: rgba(255, 77, 46, 0.18) !important;
+}
+.fee-label {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(245, 240, 232, 0.5);
+  margin-bottom: 10px;
+}
+.fee-col-right .fee-label { color: #FF4D2E; }
+.fee-number {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 36px;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: rgba(245, 240, 232, 0.4);
+  margin-bottom: 8px;
+}
+.fee-col-right .fee-number { color: #F5F0E8; }
+.fee-caption {
+  font-size: 12px;
+  color: rgba(245, 240, 232, 0.4);
+  line-height: 1.4;
+}
+.fee-col-right .fee-caption { color: rgba(245, 240, 232, 0.6); }
+@media (max-width: 380px) {
+  .fee-wrap { flex-direction: column; }
+  .fee-col + .fee-col {
+    border-left: none;
+    border-top: 1px solid rgba(245, 240, 232, 0.08);
+  }
+  .fee-col-right {
+    border-left: none !important;
+    border-top-color: rgba(255, 77, 46, 0.18) !important;
+  }
+}
+
+/* ── WHAT YOU GET ── */
+.wyg-wrap {
+  max-width: 560px;
+  margin: 0 auto;
+}
+.wyg-label {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #FF4D2E;
+  margin-bottom: 20px;
+}
+.wyg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.wyg-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.wyg-arrow {
+  color: #FF4D2E;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  line-height: 1.5;
+}
+.wyg-text {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 16px;
+  color: #F5F0E8;
+  line-height: 1.5;
+}
+
+/* ── PROOF POINT ── */
+.proof-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 24px 24px 24px 24px;
+  border-left: 3px solid #FF4D2E;
+  background: rgba(255, 77, 46, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+.proof-text {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 19px;
+  color: #F5F0E8;
+  line-height: 1.6;
+}
+
+/* ── FOOTER ── */
+.lp-footer {
+  padding: 32px 24px;
+  text-align: center;
+  border-top: 1px solid rgba(245, 240, 232, 0.06);
+}
+.lp-footer p {
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 12px;
+  color: rgba(245, 240, 232, 0.35);
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+
+<!-- SECTION 1: HEADER -->
+<header class="lp-header">
+  <span class="lp-wm">debt<span class="lp-wm-slash">/</span>self</span>
+</header>
+
+<!-- SECTION 2: HERO -->
+<div class="hero-wrap">
+  <p class="hero-eyebrow">Your creditor has a script.</p>
+  <h1 class="hero-headline">Now you do <span class="serif-accent">too</span>.</h1>
+  <p class="hero-sub">debtself gives you word-for-word negotiation scripts, creditor intelligence, and a full settlement pipeline. One flat fee. You handle it yourself, on your terms.</p>
+</div>
+
+<!-- SECTION 3: PRIMARY CTA (above screenshots) -->
+<div class="cta-wrap hero-cta">
+  <button class="btn-cta" onclick="goToApp('/assessment', 'reddit_lp_cta')">Do it yourself. Keep the fees. →</button>
+  <p class="cta-micro">Free · Takes 2 minutes · No credit check</p>
+</div>
+
+<!-- SECTION 4: DUAL SCREENSHOTS -->
+<div class="screenshots-wrap">
+  <div class="screenshot-item">
+    <img
+      src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/IMG_2695.jpg"
+      alt="debtself negotiation script — word-for-word guidance mid-call"
+      loading="eager"
+    />
+    <p class="screenshot-caption">Real-time script guidance during your call</p>
+  </div>
+  <div class="screenshot-item">
+    <img
+      src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/intel.jpg"
+      alt="debtself creditor intelligence — Capital One settlement range and call strategy"
+      loading="eager"
+    />
+    <p class="screenshot-caption">Know your creditor before you dial</p>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 5: TRUST ROW -->
+<div class="s" style="padding-top:64px;padding-bottom:16px;">
+  <div class="trust-row">
+    <div class="trust-item"><span class="trust-check">✓</span> $249 flat fee</div>
+    <div class="trust-item"><span class="trust-check">✓</span> No SSN required</div>
+    <div class="trust-item"><span class="trust-check">✓</span> Stripe payments</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 6: FEE CONTRAST -->
+<div class="s" style="padding-top:16px;">
+  <div class="fee-wrap">
+    <div class="fee-col">
+      <div class="fee-label">Settlement company</div>
+      <div class="fee-number">$6,000+</div>
+      <div class="fee-caption">on $25,000 in debt</div>
+    </div>
+    <div class="fee-col fee-col-right">
+      <div class="fee-label">debtself</div>
+      <div class="fee-number">$249</div>
+      <div class="fee-caption">one time</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 7: WHAT YOU GET -->
+<div class="s" style="padding-top:24px;">
+  <div class="wyg-wrap">
+    <p class="wyg-label">What's included</p>
+    <div class="wyg-list">
+      <div class="wyg-item">
+        <span class="wyg-arrow">→</span>
+        <span class="wyg-text">Word-for-word scripts for every call scenario, with real-time coach tips as the conversation unfolds</span>
+      </div>
+      <div class="wyg-item">
+        <span class="wyg-arrow">→</span>
+        <span class="wyg-text">Deep creditor intelligence on who you're calling, settlement ranges, lawsuit risk, best time to call, and the direct number</span>
+      </div>
+      <div class="wyg-item">
+        <span class="wyg-arrow">→</span>
+        <span class="wyg-text">Full settlement pipeline to track every debt from first call to signed agreement</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 8: PROOF POINT -->
+<div class="s">
+  <p style="font-family:'Familjen Grotesk',sans-serif;font-size:13px;font-weight:700;color:#FF4D2E;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:16px;">Why it works</p>
+  <div class="proof-wrap">
+    <p class="proof-text">Built by someone who works in debt settlement. These are the exact scripts and strategies you need to negotiate on equal footing with your creditors.</p>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 9: SECOND CTA -->
+<div class="s">
+  <div class="cta-wrap">
+    <button class="btn-cta" onclick="goToApp('/assessment', 'reddit_lp_cta')">Do it yourself. Keep the fees. →</button>
+    <p class="cta-micro">Free · Takes 2 minutes · No credit check</p>
+  </div>
+</div>
+
+<!-- SECTION 10: DISCLAIMER FOOTER -->
+<footer class="lp-footer">
+  <p>Results vary. debtself is not a law firm and does not provide legal advice.</p>
+</footer>
+
+<script>
+function buildAppUrl(path, ctaLabel) {
+  var distinctId = posthog.get_distinct_id();
+  var base = 'https://app.debtself.com' + (path || '/assessment');
+  var url = base + '?ph_distinct_id=' + encodeURIComponent(distinctId);
+  posthog.capture('cta_clicked', {
+    cta_label:   ctaLabel,
+    destination: base,
+  });
+  return url;
+}
+
+function goToApp(path, ctaLabel) {
+  window.location.href = buildAppUrl(path, ctaLabel);
+}
+</script>
+</body>
+</html>
