@@ -231,7 +231,7 @@ body{background:var(--ink);color:var(--paper);font-family:'Familjen Grotesk',san
 .scripts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:700px){.scripts-grid{grid-template-columns:1fr;}}
 .script-row{background:var(--ink-card);border:1px solid rgba(217,210,194,0.08);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:14px;}
-.sr-badge{background:rgba(255,77,46,0.1);border:1px solid rgba(255,77,46,0.2);font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--signal);padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase;flex-shrink:0;}
+.sr-badge{background:rgba(255,77,46,0.1);border:1px solid rgba(255,77,46,0.2);font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--signal);padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase;flex-shrink:0;min-width:72px;text-align:center;}
 .sri-title{font-size:13px;font-weight:600;color:var(--paper);margin-bottom:2px;}
 .sri-sub{font-size:11px;color:var(--dust);}
 
@@ -828,7 +828,7 @@ rdt('track', 'PageVisit');
       <div class="script-row"><span class="sr-badge">All</span><div><div class="sri-title">Agreement Confirmation</div><div class="sri-sub">Lock in the deal — never pay before this</div></div></div>
       <div class="script-row"><span class="sr-badge">Medical</span><div><div class="sri-title">Medical Debt</div><div class="sri-sub">Charity care first — then negotiate at 20–30%</div></div></div>
       <div class="script-row"><span class="sr-badge">All</span><div><div class="sri-title">They Called You</div><div class="sri-sub">A creditor called unexpectedly — here's what to say</div></div></div>
-      <div class="script-row" style="border-color:rgba(255,77,46,0.2);background:rgba(255,77,46,0.04);">
+      <div class="script-row" style="border-color:rgba(255,77,46,0.2);background:rgba(255,77,46,0.04);grid-column:1/-1;">
         <span class="sr-badge" style="border-color:rgba(255,77,46,0.3);">Included</span>
         <div><div class="sri-title" style="color:var(--signal);">All scripts — yours with debtself</div><div class="sri-sub">Plus the in-call reader, objection handler, and call log</div></div>
         <a href="https://app.debtself.com/assessment" class="btn-primary" onclick="event.preventDefault();goToApp('/assessment','scripts_get_access')" style="font-size:12px;padding:9px 16px;white-space:nowrap;margin-left:auto;">Get access →</a>
