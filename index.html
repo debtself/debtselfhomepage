@@ -622,108 +622,90 @@ rdt('track', 'PageVisit');
     <div style="font-family:'Instrument Serif',serif;font-size:clamp(28px,4vw,48px);color:var(--paper);line-height:1.15;margin-bottom:16px;">The full system. Nothing held back.</div>
     <div style="font-size:16px;color:var(--dust);max-width:580px;line-height:1.7;margin-bottom:56px;">Every screen built around one goal — getting you off the phone with a settlement and money back in your pocket.</div>
 
-    <div style="display:flex;flex-direction:column;gap:0;">
+    <style>
+.ds-slider{display:flex;gap:64px;align-items:center;}
+.ds-slider-text{flex:1;min-width:0;}
+.ds-slider-screen{flex:0 0 340px;}
+.ds-slider-screen img{width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);}
+.ds-slide-kicker{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;}
+.ds-slide-headline{font-family:'Instrument Serif',serif;font-size:clamp(22px,2.5vw,32px);color:var(--paper);line-height:1.25;margin-bottom:14px;}
+.ds-slide-desc{font-size:15px;color:var(--dust);line-height:1.7;margin-bottom:32px;}
+.ds-controls{display:flex;align-items:center;gap:16px;}
+.ds-btn{background:transparent;border:1px solid rgba(217,210,194,0.2);border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dust);font-size:18px;transition:border-color 0.15s,color 0.15s;flex-shrink:0;}
+.ds-btn:hover{border-color:var(--signal);color:var(--signal);}
+.ds-dots{display:flex;gap:6px;align-items:center;}
+.ds-dot{width:6px;height:6px;border-radius:50%;background:rgba(217,210,194,0.2);cursor:pointer;transition:all 0.2s;border:none;padding:0;}
+.ds-dot.active{background:var(--signal);width:20px;border-radius:3px;}
+.ds-counter{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(217,210,194,0.35);letter-spacing:0.1em;margin-left:4px;}
+@media(max-width:768px){
+  .ds-slider{flex-direction:column;gap:24px;}
+  .ds-slider-screen{flex:0 0 auto;width:100%;}
+  .ds-slider-text{order:2;}
+  .ds-slider-screen{order:1;}
+}
+</style>
 
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Dashboard</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Your full picture</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Total debt, fees avoided, debt-free date, and your go/no-go verdict — all in one view.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/dashboard.jpg" alt="debtself Dashboard" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
+<div class="ds-slider" id="ds-slider">
+  <div class="ds-slider-text" id="ds-text">
+    <div class="ds-slide-kicker" id="ds-kicker">Dashboard</div>
+    <div class="ds-slide-headline" id="ds-headline">Your full picture</div>
+    <div class="ds-slide-desc" id="ds-desc">Total debt, fees avoided, debt-free date, and your go/no-go verdict — all in one view.</div>
+    <div class="ds-controls">
+      <button class="ds-btn" id="ds-prev" aria-label="Previous">&#8592;</button>
+      <div class="ds-dots" id="ds-dots"></div>
+      <button class="ds-btn" id="ds-next" aria-label="Next">&#8594;</button>
+      <span class="ds-counter" id="ds-counter">1 / 9</span>
     </div>
   </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);flex-direction:row-reverse;">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Debts</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Ranked by priority</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Accounts sorted by how fast you can settle them. Settlement range and payment plan options calculated for you.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/debts.jpg" alt="debtself Debts Screen" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
+  <div class="ds-slider-screen">
+    <img id="ds-img" src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/dashboard.jpg" alt="debtself Dashboard" loading="lazy"/>
   </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">War Chest</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Your settlement fund</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Track your savings, deposit streak, and exactly how close you are to making your opening offer.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/war-chest.jpg" alt="debtself War Chest" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);flex-direction:row-reverse;">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Creditor Intel</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Know before you call</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Creditors profiled. Settlement ranges, contact numbers, and what each one actually responds to.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/creditor-intel.jpg" alt="debtself Creditor Intel" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Scripts</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Negotiation scripts</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Opening offers, counter offers, medical debt, legal situations, and more. The right script for every scenario.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/scripts.jpg" alt="debtself Scripts" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);flex-direction:row-reverse;">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Script Reader</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Know exactly what to say</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Word for word. Live timer running. Coach notes below every line. You never freeze up — just read and tap.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/script-reader.jpg" alt="debtself Script Reader" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">The Offer</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Your number — calculated</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Exact dollar amount filled in automatically. Objection responses ready. Silence coaching built in.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/opening-offer.jpg" alt="debtself Opening Offer" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;border-bottom:1px solid rgba(217,210,194,0.06);flex-direction:row-reverse;">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Agreement Pending</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">Wait for the written agreement</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">After the call, your creditor will send a written settlement agreement. Do not pay a single dollar until that document arrives and you have verified every detail in it.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/agreement-pending.jpg" alt="debtself Agreement Pending" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:64px;padding:64px 0;">
-    <div style="flex:1;min-width:0;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--signal);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Settlement Complete</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:clamp(20px,2.5vw,28px);color:var(--paper);line-height:1.25;margin-bottom:12px;">The moment it's done</div>
-      <div style="font-size:15px;color:var(--dust);line-height:1.7;">Savings logged. Account closed. Money stays with you — not a settlement company.</div>
-    </div>
-    <div style="flex:0 0 340px;">
-      <img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/settlement-complete.jpg" alt="debtself Settlement Complete" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(217,210,194,0.08);" loading="lazy"/>
-    </div>
-  </div>
-
 </div>
+
+<script>
+(function(){
+  var slides = [
+    {kicker:'Dashboard',headline:'Your full picture',desc:'Total debt, fees avoided, debt-free date, and your go/no-go verdict — all in one view.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/dashboard.jpg',alt:'debtself Dashboard'},
+    {kicker:'Debts',headline:'Ranked by priority',desc:'Accounts sorted by how fast you can settle them. Settlement range and payment plan options calculated for you.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/debts.jpg',alt:'debtself Debts Screen'},
+    {kicker:'War Chest',headline:'Your settlement fund',desc:'Track your savings, deposit streak, and exactly how close you are to making your opening offer.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/war-chest.jpg',alt:'debtself War Chest'},
+    {kicker:'Creditor Intel',headline:'Know before you call',desc:'Creditors profiled. Settlement ranges, contact numbers, and what each one actually responds to.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/creditor-intel.jpg',alt:'debtself Creditor Intel'},
+    {kicker:'Scripts',headline:'Negotiation scripts',desc:'Opening offers, counter offers, medical debt, legal situations, and more. The right script for every scenario.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/scripts.jpg',alt:'debtself Scripts'},
+    {kicker:'Script Reader',headline:'Know exactly what to say',desc:'Word for word. Live timer running. Coach notes below every line. You never freeze up — just read and tap.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/script-reader.jpg',alt:'debtself Script Reader'},
+    {kicker:'The Offer',headline:'Your number — calculated',desc:'Exact dollar amount filled in automatically. Objection responses ready. Silence coaching built in.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/opening-offer.jpg',alt:'debtself Opening Offer'},
+    {kicker:'Agreement Pending',headline:'Wait for the written agreement',desc:'After the call, your creditor will send a written settlement agreement. Do not pay a single dollar until that document arrives and you have verified every detail in it.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/agreement-pending.jpg',alt:'debtself Agreement Pending'},
+    {kicker:'Settlement Complete',headline:'The moment it\'s done',desc:'Savings logged. Account closed. Money stays with you — not a settlement company.',img:'https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/settlement-complete.jpg',alt:'debtself Settlement Complete'}
+  ];
+  var current = 0;
+  var kicker = document.getElementById('ds-kicker');
+  var headline = document.getElementById('ds-headline');
+  var desc = document.getElementById('ds-desc');
+  var img = document.getElementById('ds-img');
+  var counter = document.getElementById('ds-counter');
+  var dotsWrap = document.getElementById('ds-dots');
+  var dots = [];
+  slides.forEach(function(s,i){
+    var d = document.createElement('button');
+    d.className = 'ds-dot' + (i===0?' active':'');
+    d.setAttribute('aria-label','Slide '+(i+1));
+    d.addEventListener('click',function(){goTo(i);});
+    dotsWrap.appendChild(d);
+    dots.push(d);
+  });
+  function goTo(n){
+    current = n;
+    var s = slides[current];
+    kicker.textContent = s.kicker;
+    headline.textContent = s.headline;
+    desc.textContent = s.desc;
+    img.src = s.img;
+    img.alt = s.alt;
+    counter.textContent = (current+1)+' / '+slides.length;
+    dots.forEach(function(d,i){d.className='ds-dot'+(i===current?' active':'');});
+  }
+  document.getElementById('ds-prev').addEventListener('click',function(){goTo(current===0?slides.length-1:current-1);});
+  document.getElementById('ds-next').addEventListener('click',function(){goTo(current===slides.length-1?0:current+1);});
+})();
+</script>
 
     <div style="text-align:center;margin-top:48px;">
       <a href="https://app.debtself.com/assessment" onclick="event.preventDefault();goToApp('/assessment','inside_section_cta')" style="background:var(--signal);color:#fff;font-family:'Familjen Grotesk',sans-serif;font-size:15px;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;display:inline-block;">Start free — see your numbers →</a>
