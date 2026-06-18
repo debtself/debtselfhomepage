@@ -17,15 +17,6 @@
       }
     })()
 
-    // Load jsPDF lazily only when PDF export is triggered
-    function loadJsPDF(callback) {
-      if (window.jspdf) { callback(); return; }
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      s.onload = callback;
-      s.onerror = () => alert('PDF export requires an internet connection. Please connect and try again.');
-      document.head.appendChild(s);
-    }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
@@ -41,28 +32,19 @@
 
     /* TOPBAR */
     .topbar {
-      background: var(--dark);
-      border-bottom: none;
-      padding: 0 20px;
+      background: #0A0E12;
+      padding: 0 24px;
       height: 52px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 100;
     }
-    .wm { display:flex; align-items:baseline; }
-    .wm-t { font-family:var(--sans); font-weight:700; font-size:17px; color:#FAF8F3; }
-    .wm-s { font-family:var(--sans); font-weight:700; font-size:17px; color:var(--red); }
-    .wm-p { font-family:'Instrument Serif',serif; font-style:italic; font-size:16px; color:rgba(250,248,243,0.55); margin-left:7px; font-weight:400; letter-spacing:0.01em; }
-    .topbar-step {
-      font-family:var(--mono);
-      font-size:9px;
-      color:rgba(250,248,243,0.35);
-      letter-spacing:.14em;
-      text-transform:uppercase;
-    }
+    .wm { display:flex; align-items:baseline; gap:0; }
+    .wm-b { font-family:'Familjen Grotesk',sans-serif; font-weight:700; font-size:17px; color:#FAF8F3; }
+    .wm-s { font-family:'Familjen Grotesk',sans-serif; font-weight:700; font-size:17px; color:#FF4D2E; }
+    .wm-p { font-family:'Instrument Serif',serif; font-style:italic; font-size:15px; color:rgba(250,248,243,0.45); margin-left:7px; font-weight:400; }
 
     /* PROGRESS BAR */
     .progress-track { height:2px; background:rgba(255,77,46,0.15); position:sticky; top:52px; z-index:99; }
@@ -140,7 +122,7 @@
     .budget-q { margin-bottom:28px; }
     .budget-q-title { font-family:var(--serif); font-size:22px; color:var(--dark); line-height:1.3; margin-bottom:6px; }
     .budget-q-sub { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:16px; }
-    .budget-ack { font-size:13px; color:var(--green); font-weight:600; margin-bottom:16px; font-style:italic; min-height:20px; }
+    .budget-ack { font-size:13px; color:var(--dark); font-weight:600; margin-bottom:16px; font-style:italic; min-height:20px; }
     .freq-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
     .freq-opt { background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:13px; text-align:center; cursor:pointer; transition:all .15s; font-size:13px; font-weight:500; color:var(--muted); }
     .freq-opt.sel { border-color:var(--red); color:var(--red); background:var(--red-soft); }
@@ -180,7 +162,7 @@
     .unlock-row-val { font-family:var(--mono); font-size:15px; font-weight:600; color:var(--dark); }
     .unlock-row.total { padding-top:16px; margin-top:4px; }
     .unlock-row.total .unlock-row-lbl { font-size:15px; font-weight:700; color:var(--dark); }
-    .unlock-row.total .unlock-row-val { font-size:20px; color:var(--green); }
+    .unlock-row.total .unlock-row-val { font-size:20px; color:var(--dark); }
     .unlock-row.total.neg .unlock-row-val { color:var(--red); }
     .unlock-verdict { max-width:520px; margin:0 auto; padding:20px 20px 32px; }
     .verdict-box { border-radius:12px; padding:16px 18px; }
@@ -217,13 +199,13 @@
     .slider-impact { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .impact-box { background:var(--bg); border-radius:8px; padding:12px; text-align:center; }
     .impact-lbl { font-size:10px; color:var(--muted); margin-bottom:4px; }
-    .impact-val { font-family:var(--mono); font-size:15px; font-weight:600; color:var(--green); }
+    .impact-val { font-family:var(--mono); font-size:15px; font-weight:600; color:var(--red); }
 
     /* PATH CARDS */
     .paths-title { font-family:var(--serif); font-size:20px; color:var(--dark); margin-bottom:4px; margin-top:8px; }
     .paths-sub { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
     .pcard { background:var(--white); border:1px solid var(--border); border-radius:14px; margin-bottom:10px; overflow:hidden; }
-    .pcard.best { border-color:var(--green); border-left-width:3px; }
+    .pcard.best { border-color:var(--red); border-left-width:3px; }
     .pcard.warn { border-color:#F59E0B; }
     .pcard-head { padding:18px 18px 0; cursor:pointer; user-select:none; }
     .pcard-head-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
@@ -239,7 +221,7 @@
     .pm { text-align:center; }
     .pm-lbl { font-size:10px; color:var(--muted); margin-bottom:3px; }
     .pm-val { font-family:var(--mono); font-size:12px; font-weight:600; color:var(--dark); }
-    .pm-val.g { color:var(--green); }
+    .pm-val.g { color:var(--dark); }
     .pm-val.r { color:var(--red); }
     .pm-val.a { color:var(--amber); }
     .pm-val.b { color:var(--blue); }
@@ -264,8 +246,8 @@
     .ps-right { flex:1; }
     .ps-account { font-size:13px; font-weight:700; color:var(--dark); margin-bottom:2px; }
     .ps-detail { font-size:11px; color:var(--muted); line-height:1.5; }
-    .ps-amount { font-family:var(--mono); font-size:12px; font-weight:600; color:var(--green); margin-top:2px; }
-    .ps-paid { display:inline-block; background:var(--green-soft); color:var(--green); font-family:var(--mono); font-size:9px; padding:2px 7px; border-radius:3px; margin-top:3px; }
+    .ps-amount { font-family:var(--mono); font-size:12px; font-weight:600; color:var(--red); margin-top:2px; }
+    .ps-paid { display:inline-block; background:var(--red-soft); color:var(--red); font-family:var(--mono); font-size:9px; padding:2px 7px; border-radius:3px; margin-top:3px; }
     .ps-rollover { background:var(--red-soft); border-radius:6px; padding:7px 10px; margin-top:7px; font-size:11px; color:var(--red); line-height:1.5; }
 
     /* CONSOLIDATION ODDS */
@@ -315,6 +297,78 @@
     .email-capture-btn:disabled { opacity:0.45; }
     .email-capture-status { font-size:12px; margin-top:8px; min-height:16px; color:var(--muted); }
 
+    /* RESULTS SCREEN — NEW LAYOUT */
+    #s-results { background: var(--bg); }
+    .res-wrap { max-width:600px; margin:0 auto; padding:32px 20px 80px; display:flex; flex-direction:column; gap:16px; }
+
+    /* Block 1 */
+    .res-rec-card { background:var(--bg); border-left:3px solid #FF4D2E; border-radius:12px; padding:20px 20px 20px 24px; }
+    .res-rec-label { font-family:var(--mono); font-size:9px; color:#6B7280; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px; }
+    .res-rec-text { font-size:15px; color:#0A0E12; line-height:1.75; }
+
+    /* Block 2 */
+    .res-stats { display:flex; gap:12px; }
+    .res-stat { background:#FFFFFF; border:1px solid #E8E4DC; border-radius:12px; padding:16px; flex:1; }
+    .res-stat-lbl { font-family:var(--mono); font-size:9px; color:#6B7280; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
+    .res-stat-val { font-size:20px; font-weight:700; color:#0A0E12; line-height:1.2; }
+    .res-stat-red { color:#FF4D2E; }
+
+    /* Block 3 — Plan Table */
+    .res-section { display:flex; flex-direction:column; }
+    .res-section-eyebrow { font-family:var(--mono); font-size:9px; color:#6B7280; text-transform:uppercase; letter-spacing:0.14em; margin-bottom:6px; }
+    .res-section-sub { font-size:13px; color:#6B7280; margin-bottom:12px; }
+    .res-plan-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .res-plan-table { width:100%; border-collapse:collapse; font-size:14px; }
+    .res-plan-table thead tr { border-bottom:2px solid #FF4D2E; }
+    .res-plan-table thead th { font-family:var(--mono); font-size:9px; color:#6B7280; text-transform:uppercase; letter-spacing:0.12em; font-weight:600; padding:0 12px 10px 0; text-align:left; white-space:nowrap; }
+    .res-plan-table thead th:last-child { padding-right:0; }
+    .res-plan-table tbody tr { border-bottom:1px solid #E8E4DC; }
+    .res-plan-table tbody tr:last-child { border-bottom:none; }
+    .res-plan-table tbody td { padding:12px 12px 12px 0; color:#0A0E12; vertical-align:top; }
+    .res-plan-table tbody td:last-child { padding-right:0; }
+    .res-plan-td-month { font-family:var(--mono); font-size:12px; color:#6B7280; white-space:nowrap; }
+    .res-plan-td-account { font-weight:600; }
+    .res-plan-td-payment { font-family:var(--mono); font-weight:700; color:#FF4D2E; white-space:nowrap; }
+    .res-plan-td-action { font-size:13px; color:#6B7280; }
+    .res-plan-td-done { font-size:13px; font-weight:700; color:#FF4D2E; }
+
+    /* Block 4 — Compare Accordion */
+    .res-compare-toggle { width:100%; background:#FFFFFF; border:1px solid #E8E4DC; border-radius:12px; padding:16px 20px; font-size:14px; font-weight:600; color:#0A0E12; font-family:var(--sans); cursor:pointer; display:flex; justify-content:space-between; align-items:center; touch-action:manipulation; -webkit-tap-highlight-color:transparent; text-align:left; }
+    .res-compare-toggle.open { border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom-color:transparent; }
+    .res-compare-body { background:#FFFFFF; border:1px solid #E8E4DC; border-top:none; border-bottom-left-radius:12px; border-bottom-right-radius:12px; overflow:hidden; }
+    .res-compare-row { display:flex; align-items:center; gap:8px; padding:12px 20px; border-bottom:1px solid #E8E4DC; font-size:14px; }
+    .res-compare-row:last-child { border-bottom:none; }
+    .res-compare-name { flex:1; font-weight:600; color:#0A0E12; }
+    .res-compare-date { font-family:var(--mono); font-size:12px; color:#6B7280; white-space:nowrap; }
+    .res-compare-saved { font-family:var(--mono); font-size:12px; font-weight:700; color:#FF4D2E; white-space:nowrap; min-width:60px; text-align:right; }
+    .res-compare-saved.muted { color:#6B7280; font-weight:400; }
+    .res-compare-note { font-size:12px; color:#6B7280; }
+
+    /* Block 5 — CTA */
+    .res-ds-block { background:#0A0E12; border-radius:16px; padding:28px 24px; }
+    .res-ds-eyebrow { font-family:var(--mono); font-size:9px; color:#FF4D2E; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px; }
+    .res-ds-headline { font-size:18px; font-weight:700; color:#FAF8F3; margin-bottom:8px; line-height:1.35; }
+    .res-ds-sub { font-size:13px; color:rgba(250,248,243,0.55); line-height:1.6; margin-bottom:16px; }
+    .res-ds-keep { font-size:13px; color:rgba(250,248,243,0.6); margin-bottom:20px; }
+    .res-ds-keep-num { font-weight:700; color:#FF4D2E; font-size:16px; }
+    .res-ds-btn { display:block; width:100%; background:#FF4D2E; color:white; text-decoration:none; border-radius:10px; padding:15px; font-size:15px; font-weight:700; font-family:var(--sans); text-align:center; border:none; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+
+    /* Block 6 — Email */
+    .res-email-card { background:#FFFFFF; border:1px solid #E8E4DC; border-radius:14px; padding:20px; }
+    .res-email-label { font-size:14px; font-weight:600; color:#0A0E12; margin-bottom:4px; }
+    .res-email-sub { font-size:12px; color:#6B7280; margin-bottom:12px; }
+    .res-email-row { display:flex; gap:8px; }
+    .res-email-input { flex:1; background:var(--bg); border:1px solid #E8E4DC; border-radius:8px; padding:11px 13px; font-size:15px; font-family:var(--sans); color:#0A0E12; outline:none; -webkit-appearance:none; transition:border-color 0.15s; }
+    .res-email-input:focus { border-color:#FF4D2E; background:#FFFFFF; }
+    .res-email-btn { background:#FF4D2E; color:white; border:none; border-radius:8px; padding:11px 18px; font-size:14px; font-weight:700; font-family:var(--sans); cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
+    .res-email-btn:disabled { opacity:0.45; }
+    .res-email-status { font-size:12px; margin-top:8px; min-height:16px; color:#6B7280; }
+
+    /* Disclaimer + restart */
+    .res-disclaimer { font-family:var(--mono); font-size:10px; color:#6B7280; line-height:1.7; text-align:center; opacity:0.6; padding:0 8px; }
+    .res-restart { text-align:center; margin-top:8px; }
+    .res-restart-link { font-size:12px; color:#6B7280; text-decoration:underline; }
+
     /* OTHER OBLIGATIONS */
     .oblig-section { margin-bottom:24px; }
     .oblig-title { font-size:14px; font-weight:700; color:var(--dark); margin-bottom:4px; }
@@ -343,8 +397,10 @@
       .pcard-metrics .pm:last-child{grid-column:1/-1;}
       .con-ticker{font-size:44px;}
       .freq-options{grid-template-columns:1fr 1fr;}
-      .topbar-step{display:none;}
       .credit-txt{display:none;}
+      .res-stats{flex-direction:column;}
+      .res-stat-val{font-size:18px;}
+      .res-wrap{padding:24px 16px 80px;}
     }
 
     /* PRINT STYLES */
@@ -363,8 +419,10 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="wm"><span class="wm-t">debt</span><span class="wm-s">/</span><span class="wm-t">self</span><span class="wm-p">planner</span></div>
-  <div class="topbar-step" id="topbar-step">Free · No account required</div>
+  <div class="wm">
+    <span class="wm-b">debt</span><span class="wm-s">/</span><span class="wm-b">self</span>
+    <span class="wm-p">planner</span>
+  </div>
 </div>
 <div class="progress-track"><div class="progress-fill" id="prog" style="width:0%"></div></div>
 
@@ -575,40 +633,80 @@
      S7 — RESULTS
 ═══════════════════════════════ -->
 <div id="s-results" class="screen">
-  <div class="rec-header">
-    <div class="rec-inner">
-      <div class="eyebrow" style="margin-bottom:10px;">Your personalized recommendation</div>
-      <div class="rec-text" id="rec-text"></div>
-    </div>
-  </div>
+  <div class="res-wrap">
 
-  <div class="wrap">
-    <div id="util-callout-wrap"></div>
-
-    <div class="slider-sec">
-      <div class="slider-sec-title">What if you paid a little more each month?</div>
-      <div class="slider-sec-sub">Move the slider to see how extra payments change your debt free date and total interest in real time.</div>
-      <div class="slider-row">
-        <input type="range" class="main-slider" id="r-slider" min="0" max="1000" step="25" value="0" oninput="updateSlider()" />
-        <div class="slider-val" id="r-slider-val">+$0/mo</div>
-      </div>
-      <div class="slider-impact">
-        <div class="impact-box"><div class="impact-lbl">Debt free by</div><div class="impact-val" id="si-date"></div></div>
-        <div class="impact-box"><div class="impact-lbl">Interest saved</div><div class="impact-val" id="si-saved"></div></div>
-      </div>
+    <!-- BLOCK 1: PRIMARY RECOMMENDATION -->
+    <div class="res-rec-card">
+      <div class="res-rec-label">YOUR PERSONALIZED RECOMMENDATION</div>
+      <div id="rec-text" class="res-rec-text"></div>
     </div>
 
-    <div class="paths-title">All your options, ranked by total cost</div>
-    <div class="paths-sub">Every path has real trade-offs. Here is the honest picture for your specific situation.</div>
-    <div id="path-cards"></div>
+    <!-- BLOCK 2: THREE KEY NUMBERS -->
+    <div class="res-stats">
+      <div class="res-stat">
+        <div class="res-stat-lbl">Debt free by</div>
+        <div class="res-stat-val" id="stat-date"></div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-lbl">Interest saved</div>
+        <div class="res-stat-val res-stat-red" id="stat-saved"></div>
+      </div>
+      <div class="res-stat">
+        <div class="res-stat-lbl">Monthly payment</div>
+        <div class="res-stat-val" id="stat-payment"></div>
+      </div>
+    </div>
 
+    <!-- BLOCK 3: MONTH BY MONTH PLAN -->
+    <div class="res-section">
+      <div class="res-section-eyebrow">YOUR MONTH-BY-MONTH PLAN</div>
+      <div id="plan-method-label" class="res-section-sub"></div>
+      <div class="res-plan-table-wrap">
+        <table class="res-plan-table" id="plan-table">
+          <thead>
+            <tr>
+              <th>Months</th>
+              <th>Account</th>
+              <th>Payment</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="plan-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BLOCK 4: COMPARE OPTIONS ACCORDION -->
+    <div class="res-section">
+      <button class="res-compare-toggle" id="compare-toggle" onclick="toggleCompare()" touch-action="manipulation">
+        <span>Compare all your options</span>
+        <svg id="compare-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="res-compare-body" id="compare-body" style="display:none;">
+        <div id="compare-rows"></div>
+      </div>
+    </div>
+
+    <!-- BLOCK 5: DEBTSELF CTA (conditionally rendered) -->
     <div id="ds-wrap"></div>
 
-    <button class="print-btn" id="pdf-btn" onclick="generatePDF()">⬇ Save my plan as PDF</button>
+    <!-- BLOCK 6: SAVE MY PLAN -->
+    <div class="res-email-card">
+      <div class="res-email-label">Save my plan to email</div>
+      <div class="res-email-sub">We will send you a copy you can refer back to anytime.</div>
+      <div class="res-email-row">
+        <input class="res-email-input" id="planner-email" type="email" placeholder="your@email.com" autocomplete="email" onblur="submitPlannerEmail()" onkeydown="if(event.key==='Enter')submitPlannerEmail()" />
+        <button class="res-email-btn" onclick="submitPlannerEmail()" touch-action="manipulation">Send</button>
+      </div>
+      <div class="res-email-status" id="email-capture-status"></div>
+    </div>
 
-    <button class="btn-ghost" onclick="restart()">Start over with different numbers</button>
+    <div class="res-disclaimer">debtself planner is educational software. All figures are estimates based on your inputs and national averages. Results vary. We are not attorneys, financial advisors, or a debt settlement company. Nothing here constitutes legal or financial advice.</div>
 
-    <div class="disclaimer">debtself planner is educational software. All figures are estimates based on your inputs and national averages. Results vary. We are not attorneys, financial advisors, or a debt settlement company. Nothing here constitutes legal or financial advice.</div>
+    <div class="res-restart">
+      <a href="#" onclick="restart();return false;" class="res-restart-link">Start over with different numbers</a>
+    </div>
+
   </div>
 </div>
 
@@ -633,8 +731,6 @@ function go(id, step) {
   window.scrollTo(0,0)
   const pct = (step/6)*100
   document.getElementById('prog').style.width = pct + '%'
-  const labels = ['','Step 1 of 4: Debts','Step 2 of 4: Credit','Step 3 of 4: Budget','','Step 4 of 4: Unlock','Your Plan']
-  document.getElementById('topbar-step').textContent = labels[step] || 'Free · No account required'
 }
 
 // ═══════════════════════════════════════
@@ -1117,114 +1213,137 @@ function buildUnlock() {
 //  BUILD RESULTS
 // ═══════════════════════════════════════
 function buildResults() {
-  const {valid,totalDebt,coFee,youKeep,minimums,avalanche,snowball,highestApr,available,totalUtil} = calcD
-  const extra=Math.max(0,Math.floor(available/25)*25)
-  const avaE=runAvalanche(valid,extra)
-  const intSavedAva=minimums.totalInterest-avalanche.totalInterest
-  const intSavedSnow=minimums.totalInterest-snowball.totalInterest
-  const avaBetter=avalanche.totalInterest<=snowball.totalInterest
+  const {valid,totalDebt,coFee,youKeep,minimums,avalanche,snowball,highestApr,available,totalUtil,ccDebts,dti} = calcD
+  const extra = Math.max(0, Math.floor(available/25)*25)
+  const avaFull = runAvalanche(valid, extra)
+  const snowFull = runSnowball(valid, extra)
+  const intSavedAva = minimums.totalInterest - avaFull.totalInterest
+  const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
+  const avaBetter = avaFull.totalInterest <= snowFull.totalInterest
+  const intDiff = Math.abs(intSavedAva - intSavedSnow)
+  const aprName = highestApr.name || 'your highest-rate account'
+  const aprVal = (Number(highestApr.apr) || 22.99).toFixed(2)
+  const monthlyInterestCost = Math.round(Number(highestApr.balance) * (Number(highestApr.apr) / 100 / 12))
+  const weightedAPR = Math.round(valid.reduce((s,d) => s + Number(d.apr) * Number(d.balance), 0) / totalDebt * 10) / 10
+  const showSettlement = S.creditScore !== 'excellent' || available < 200
 
-  // Recommendation
-  const aprName=highestApr.name||'your highest-rate account'
-  const aprVal=(Number(highestApr.apr)||22.99).toFixed(2)
+  // ── RECOMMENDATION TEXT ──
   let rec
-  if(S.creditScore==='excellent'||S.creditScore==='good') {
-    if(totalUtil>30) rec=`Your ${aprName} at ${aprVal}% APR is your most expensive debt. Paying it down first with the avalanche method saves ${fmt(intSavedAva)} in interest versus minimums only. Your utilization at ${totalUtil}% is also reducing your credit score. Paying down your highest-utilization card to under 30% could improve your score enough to qualify for a consolidation loan at a better rate.`
-    else rec=`Your ${aprName} at ${aprVal}% APR is costing you the most right now. The avalanche method saves ${fmt(intSavedAva)} in interest versus paying only minimums and moves your debt free date ${fmtYrs(minimums.months-avalanche.months)} closer. With your credit profile you may also qualify for a consolidation loan worth checking before committing to a payoff plan.`
-  } else if(available<0) {
-    rec=`Your budget is currently in deficit which means minimum payments alone are not sustainable long term. Understanding debt settlement as an option is worth your time. It reduces what you owe not just the interest rate. In the meantime the avalanche method on any accounts you can keep current saves ${fmt(intSavedAva)} compared to minimums.`
+  if (available < 0) {
+    rec = 'Your current expenses exceed your income by ' + fmt(Math.abs(available)) + ' per month. At this pace, minimum payments alone are not sustainable long term. Before choosing a payoff method, something has to change — either income goes up or expenses come down. If neither is possible right now, debt settlement is worth understanding. It reduces what you owe, not just the interest rate. That is a different outcome than any payoff plan can offer.'
+  } else if (available < 200) {
+    rec = 'You have ' + fmt(available) + ' left after expenses and minimum payments — not much room to accelerate, but the payoff methods are still executable. Put every dollar of that ' + fmt(available) + ' toward ' + aprName + ' at ' + aprVal + '% APR first. That account is costing you approximately ' + fmt(monthlyInterestCost) + ' in interest every month. Even at this pace you get debt free by ' + fmtDate(avaFull.months) + ' and save ' + fmt(intSavedAva) + ' versus minimum payments only.'
+  } else if (S.creditScore === 'excellent' && totalUtil <= 50) {
+    rec = 'With your credit profile you may qualify for a consolidation loan at 8 to 13% APR — well below your current weighted average of ' + weightedAPR + '%. If approved, consolidation would beat both the avalanche and snowball methods on total interest paid. Check your bank or credit union before committing to a payoff method. If consolidation does not work out, the avalanche method targeting ' + aprName + ' at ' + aprVal + '% APR first gets you debt free by ' + fmtDate(avaFull.months) + ' and saves ' + fmt(intSavedAva) + ' in interest.'
+  } else if (avaBetter && intDiff >= 500) {
+    rec = aprName + ' at ' + aprVal + '% APR is costing you approximately ' + fmt(monthlyInterestCost) + ' in interest every month. The avalanche method targets it first and saves ' + fmt(intSavedAva) + ' in total interest versus minimum payments — ' + fmt(intDiff) + ' more than the snowball method. With ' + fmt(extra) + ' available above your minimums each month, you are debt free by ' + fmtDate(avaFull.months) + '. Pay the minimum on every other account and put all of your extra ' + fmt(extra) + ' toward ' + aprName + ' until it is gone.'
+  } else if (avaBetter) {
+    rec = 'The avalanche and snowball methods are nearly identical for your situation — only ' + fmt(intDiff) + ' apart in total interest. We recommend avalanche because it targets ' + aprName + ' at ' + aprVal + '% APR first, which is costing you ' + fmt(monthlyInterestCost) + ' per month in interest. You are debt free by ' + fmtDate(avaFull.months) + ' and save ' + fmt(intSavedAva) + ' versus minimum payments only. Put your extra ' + fmt(extra) + ' per month toward ' + aprName + ' and pay minimums on everything else.'
   } else {
-    rec=`Your ${aprName} at ${aprVal}% APR is your priority. The avalanche method pays that account first and saves ${fmt(intSavedAva)} in interest versus minimums. It gets you debt free ${fmtYrs(minimums.months-avalanche.months)} sooner. Based on your budget you have approximately ${fmt(Math.max(0,available))} available above minimums each month.`
+    rec = 'For your situation the snowball method saves ' + fmt(intSavedSnow) + ' in total interest — ' + fmt(intDiff) + ' more than avalanche — because your smaller balances carry high rates. Start with your smallest balance account and put your extra ' + fmt(extra) + ' per month toward it while paying minimums on everything else. You are debt free by ' + fmtDate(snowFull.months) + '. Each account you close frees up more payment for the next one.'
   }
-  document.getElementById('rec-text').textContent=rec
+  document.getElementById('rec-text').textContent = rec
 
-  // Utilization callout
-  const utilCallWrap=document.getElementById('util-callout-wrap')
-  const highUtil=calcD.ccDebts.find(d=>Number(d.limit)>0&&(Number(d.balance)/Number(d.limit))>0.3)
-  if(highUtil) {
-    const u=Math.round((Number(highUtil.balance)/Number(highUtil.limit))*100)
-    const payTo30=Math.round(Number(highUtil.balance)-Number(highUtil.limit)*0.3)
-    utilCallWrap.innerHTML=`<div class="util-callout"><div class="util-callout-title">Credit score opportunity — ${highUtil.name||'Credit card'} at ${u}% utilization</div><div class="util-callout-text">Paying ${fmt(payTo30)} to bring this card under 30% utilization could improve your credit score within 30 to 60 days. A higher score improves your consolidation loan odds and interest rate.</div></div>`
-  } else utilCallWrap.innerHTML=''
+  // ── STAT NUMBERS ──
+  const recommendedRun = avaBetter ? avaFull : snowFull
+  const intSavedRec = avaBetter ? intSavedAva : intSavedSnow
+  const sortedForFirst = [...valid].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
+  const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
+  document.getElementById('stat-date').textContent = fmtDate(recommendedRun.months)
+  document.getElementById('stat-saved').textContent = fmt(intSavedRec)
+  document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
 
-  // Slider
-  document.getElementById('r-slider').value=extra
-  document.getElementById('r-slider-val').textContent='+'+fmt(extra)+'/mo'
-  updateSliderDisplay(avaE,minimums)
+  // ── PLAN TABLE ──
+  const method = avaBetter ? 'avalanche' : 'snowball'
+  document.getElementById('plan-method-label').textContent = 'Recommended method: ' + (avaBetter ? 'Avalanche' : 'Snowball')
+  const planSteps = generatePlan(valid, extra, method)
+  const tbody = document.getElementById('plan-table-body')
+  tbody.innerHTML = ''
 
-  // Payment plans
-  const avaPlan=generatePlan(valid,extra,'avalanche')
-  const snowPlan=generatePlan(valid,extra,'snowball')
+  let phaseStart = 1
+  let currentAccount = ''
+  let currentPayment = 0
 
-  // Consolidation odds
-  const odds=getConsolidationOdds(S.creditScore,totalUtil)
-  const showSettlement=S.creditScore!=='excellent'||available<200
+  planSteps.forEach((step, idx) => {
+    if (step.type === 'start') {
+      currentAccount = step.target
+      currentPayment = step.targetPay
+    } else if (step.type === 'payoff') {
+      const tr = document.createElement('tr')
+      const monthRange = phaseStart === step.month ? 'Month ' + phaseStart : 'Month ' + phaseStart + ' to ' + step.month
+      const actionText = step.nextName ? 'Paid off. Roll payment onto ' + step.nextName + '.' : 'Paid off.'
+      tr.innerHTML = `<td class="res-plan-td-month">${monthRange}</td><td class="res-plan-td-account">${currentAccount}</td><td class="res-plan-td-payment">${fmt(currentPayment)}/mo</td><td class="res-plan-td-action">${actionText}</td>`
+      tbody.appendChild(tr)
+      phaseStart = step.month + 1
+      if (step.nextName) {
+        currentAccount = step.nextName
+        currentPayment = step.newPay
+      }
+    } else if (step.type === 'done') {
+      const tr = document.createElement('tr')
+      const monthRange = phaseStart === step.month ? 'Month ' + phaseStart : 'Month ' + phaseStart + ' to ' + step.month
+      tr.innerHTML = `<td class="res-plan-td-month">${monthRange}</td><td class="res-plan-td-account">${currentAccount}</td><td class="res-plan-td-payment">${fmt(currentPayment)}/mo</td><td class="res-plan-td-done">Debt free.</td>`
+      tbody.appendChild(tr)
+    }
+  })
 
-  // Path cards
-  const showConsol=S.creditScore!=='poor'
-  document.getElementById('path-cards').innerHTML=`
-    ${pCard({name:'Avalanche method',desc:'Pay the highest interest rate account first. Mathematically the cheapest path. Best if you can stay motivated even when the first payoff takes a while.',badge:avaBetter?'SAVES MOST':'MATHEMATICALLY OPTIMAL',badgeCls:avaBetter?'bg-green':'bg-gray',best:avaBetter,metrics:[{l:'Debt free by',v:fmtDate(avalanche.months),c:'g'},{l:'Total interest',v:fmt(avalanche.totalInterest),c:''},{l:'Interest saved',v:fmt(intSavedAva),c:'g'}],creditPct:100,creditCol:'var(--green)',creditTxt:'No impact',planId:'ava',planHTML:renderPlan(avaPlan)})}
-    ${pCard({name:'Snowball method',desc:'Pay the smallest balance first. You may pay more in interest overall but getting that first account to zero creates real momentum. Best if you need early wins to stay on track.',badge:!avaBetter?'SAVES MOST':'BEST FOR MOTIVATION',badgeCls:!avaBetter?'bg-green':'bg-gray',best:!avaBetter,metrics:[{l:'Debt free by',v:fmtDate(snowball.months),c:'g'},{l:'Total interest',v:fmt(snowball.totalInterest),c:''},{l:'Interest saved',v:fmt(intSavedSnow),c:'g'}],creditPct:100,creditCol:'var(--green)',creditTxt:'No impact',planId:'snow',planHTML:renderPlan(snowPlan)})}
-    ${showConsol?pCard({name:'Consolidation loan',desc:'Combine high-rate accounts into one lower-rate personal loan. Simplifies your payments into one monthly bill and may reduce your total interest significantly.',badge:odds.label.toUpperCase(),badgeCls:odds.level==='strong'?'bg-green':odds.level==='moderate'?'bg-blue':odds.level==='lower'?'bg-amber':'bg-gray',best:false,metrics:[{l:'Est. rate',v:odds.rate,c:'b'},{l:'Your DTI',v:calcD.dti+'%',c:calcD.dti<=36?'g':'r'},{l:'Utilization',v:totalUtil+'%',c:totalUtil<=30?'g':totalUtil<=50?'a':'r'}],creditPct:80,creditCol:'#3B82F6',creditTxt:'Slight inquiry impact only',consolidation:odds,planId:null,planHTML:null}):''}
-    ${pCard({name:'Minimum payments only',desc:'Stay current on all accounts without any extra effort. Your credit stays intact but this is the most expensive path. You pay the most in interest and it takes the longest.',badge:'COSTS MOST',badgeCls:'bg-amber',best:false,metrics:[{l:'Debt free by',v:fmtDate(minimums.months),c:'a'},{l:'Total interest',v:fmt(minimums.totalInterest),c:'r'},{l:'Extra vs avalanche',v:fmt(minimums.totalInterest-avalanche.totalInterest),c:'r'}],creditPct:100,creditCol:'var(--green)',creditTxt:'No impact',planId:null,planHTML:null})}
-    ${showSettlement?pCard({name:'Debt settlement',desc:'Negotiate directly with creditors to accept less than the full balance. Reduces the principal you owe not just the interest. Your credit is affected temporarily during the process.',badge:'REDUCES PRINCIPAL',badgeCls:'bg-red',best:false,metrics:[{l:'Est. settlement',v:fmt(totalDebt*0.5)+' avg',c:''},{l:'Settlement co. fee',v:fmt(coFee),c:'r'},{l:'Timeline',v:'12 to 48 months',c:''}],creditPct:20,creditCol:'#F59E0B',creditTxt:'Temporary impact',planId:null,planHTML:null}):''}
-  `
+  // ── COMPARE ACCORDION ──
+  const odds = getConsolidationOdds(S.creditScore, totalUtil)
+  const compareRows = document.getElementById('compare-rows')
+  compareRows.innerHTML = ''
 
-  const showDs=showSettlement
-  const coFeeStr=fmt(coFee)
-  const youKeepStr=fmt(youKeep)
+  const compareData = [
+    { name: 'Avalanche method', date: fmtDate(avaFull.months), saved: fmt(intSavedAva), savedMuted: false },
+    { name: 'Snowball method',  date: fmtDate(snowFull.months), saved: fmt(intSavedSnow), savedMuted: false },
+    { name: 'Minimum payments only', date: fmtDate(minimums.months), saved: '--', savedMuted: true },
+  ]
+  if (S.creditScore !== 'poor') {
+    compareData.push({ name: 'Consolidation loan', date: odds.label, saved: odds.rate, savedMuted: true })
+  }
+  if (showSettlement) {
+    compareData.push({ name: 'Debt settlement', date: 'Reduces principal owed', saved: 'See below', savedMuted: true })
+  }
 
-  // PostHog — fire planner_completed
+  compareData.forEach(row => {
+    const div = document.createElement('div')
+    div.className = 'res-compare-row'
+    div.innerHTML = `<div class="res-compare-name">${row.name}</div><div class="res-compare-date">${row.date}</div><div class="res-compare-saved${row.savedMuted?' muted':''}">${row.saved}</div>`
+    compareRows.appendChild(div)
+  })
+
+  // ── DEBTSELF CTA ──
+  document.getElementById('ds-wrap').innerHTML = showSettlement ? `
+    <div class="res-ds-block">
+      <div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div>
+      <div class="res-ds-headline">Settlement companies charge ${fmt(coFee)} to manage your balance.</div>
+      <div class="res-ds-sub">debtself gives you the exact same process — word-for-word scripts, creditor intelligence, and a full settlement platform — for $249 flat. Worth knowing before you sign with anyone.</div>
+      <div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">${fmt(youKeep)}</span></div>
+      <a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you'd keep →</a>
+    </div>
+  ` : ''
+
+  // ── POSTHOG ──
   try {
-    if(window.posthog) {
+    if (window.posthog) {
       window.posthog.capture('planner_completed', {
         debt_amount: totalDebt,
         recommended_method: avaBetter ? 'avalanche' : 'snowball',
-        months_to_debt_free: avaBetter ? avalanche.months : snowball.months,
-        interest_saved: avaBetter ? intSavedAva : intSavedSnow,
-        settlement_relevant: showDs,
+        months_to_debt_free: recommendedRun.months,
+        interest_saved: intSavedRec,
+        settlement_relevant: showSettlement,
         total_util: totalUtil,
         credit_score: S.creditScore,
       })
     }
   } catch(e) {}
 
-  document.getElementById('ds-wrap').innerHTML = showDs ? `
-    <div class="ds-block">
-      <div class="ds-block-eyebrow">If debt settlement is the right path for you</div>
-      <div class="ds-block-headline">Settlement companies charge ${coFeeStr} to manage your balance.</div>
-      <div class="ds-block-sub">debtself gives you the exact same process — word-for-word scripts, creditor intelligence, and a full settlement platform — for $249 flat. Worth knowing before you sign with anyone.</div>
-      <div class="ds-block-keep">Est. fees you avoid: <span class="ds-block-keep-num">${fmt(coFee - 249)}</span></div>
-      <a class="ds-block-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you'd keep →</a>
-    </div>
-    <div class="email-capture" id="email-capture-wrap">
-      <div class="email-capture-label">Send me a copy of my plan</div>
-      <div class="email-capture-sub">Optional. We will follow up if you have questions.</div>
-      <div class="email-capture-row">
-        <input class="email-capture-input" id="planner-email" type="email" placeholder="your@email.com" autocomplete="email" onblur="submitPlannerEmail()" onkeydown="if(event.key==='Enter')submitPlannerEmail()" />
-        <button class="email-capture-btn" onclick="submitPlannerEmail()">Send</button>
-      </div>
-      <div class="email-capture-status" id="email-capture-status"></div>
-    </div>
-  ` : `
-    <div class="email-capture" id="email-capture-wrap">
-      <div class="email-capture-label">Send me a copy of my plan</div>
-      <div class="email-capture-sub">Optional. We will follow up if you have questions.</div>
-      <div class="email-capture-row">
-        <input class="email-capture-input" id="planner-email" type="email" placeholder="your@email.com" autocomplete="email" onblur="submitPlannerEmail()" onkeydown="if(event.key==='Enter')submitPlannerEmail()" />
-        <button class="email-capture-btn" onclick="submitPlannerEmail()">Send</button>
-      </div>
-      <div class="email-capture-status" id="email-capture-status"></div>
-    </div>
-  `
-
-  // Store calcD snapshot for email capture
+  // ── SNAPSHOT FOR EMAIL ──
   window._plannerSnapshot = {
     totalDebt,
     recommendedMethod: avaBetter ? 'Avalanche method' : 'Snowball method',
-    debtFreeDate: fmtDate(avaBetter ? avalanche.months : snowball.months),
-    interestSaved: avaBetter ? intSavedAva : intSavedSnow,
-    settlementRelevant: showDs,
+    debtFreeDate: fmtDate(recommendedRun.months),
+    interestSaved: intSavedRec,
+    settlementRelevant: showSettlement,
   }
 }
 
@@ -1244,404 +1363,18 @@ function togglePlan(id) {
   lbl.textContent=open?'Hide payment plan':'Show my step-by-step payment plan'
 }
 
-// ═══════════════════════════════════════
-//  LIVE SLIDER
-// ═══════════════════════════════════════
-function updateSlider() {
-  const extra=Number(document.getElementById('r-slider').value)
-  document.getElementById('r-slider-val').textContent='+'+fmt(extra)+'/mo'
-  const {valid,minimums,totalUtil,coFee,youKeep,totalDebt} = calcD
-  const ava=runAvalanche(valid,extra)
-  const snow=runSnowball(valid,extra)
-  const avaBetter=ava.totalInterest<=snow.totalInterest
-  const intSavedAva=minimums.totalInterest-ava.totalInterest
-  const intSavedSnow=minimums.totalInterest-snow.totalInterest
-
-  // Update impact boxes
-  updateSliderDisplay(ava,minimums)
-
-  // Rebuild avalanche card metrics and plan
-  const avaPlan=generatePlan(valid,extra,'avalanche')
-  const snowPlan=generatePlan(valid,extra,'snowball')
-
-  // Update avalanche metrics
-  const avaMetrics=document.querySelector('#path-cards .pcard:nth-child(1) .pcard-metrics')
-  if(avaMetrics) avaMetrics.innerHTML=`
-    <div class="pm"><div class="pm-lbl">Debt free by</div><div class="pm-val g">${fmtDate(ava.months)}</div></div>
-    <div class="pm"><div class="pm-lbl">Total interest</div><div class="pm-val">${fmt(ava.totalInterest)}</div></div>
-    <div class="pm"><div class="pm-lbl">Interest saved</div><div class="pm-val g">${fmt(intSavedAva)}</div></div>
-  `
-
-  // Update snowball metrics
-  const snowMetrics=document.querySelector('#path-cards .pcard:nth-child(2) .pcard-metrics')
-  if(snowMetrics) snowMetrics.innerHTML=`
-    <div class="pm"><div class="pm-lbl">Debt free by</div><div class="pm-val g">${fmtDate(snow.months)}</div></div>
-    <div class="pm"><div class="pm-lbl">Total interest</div><div class="pm-val">${fmt(snow.totalInterest)}</div></div>
-    <div class="pm"><div class="pm-lbl">Interest saved</div><div class="pm-val g">${fmt(intSavedSnow)}</div></div>
-  `
-
-  // Update payment plan bodies if open
-  const avaBody=document.getElementById('body-ava')
-  if(avaBody) avaBody.innerHTML=`<div class="plan-eyebrow">Your step-by-step payment schedule</div><div class="plan-steps">${renderPlan(avaPlan)}</div>`
-
-  const snowBody=document.getElementById('body-snow')
-  if(snowBody) snowBody.innerHTML=`<div class="plan-eyebrow">Your step-by-step payment schedule</div><div class="plan-steps">${renderPlan(snowPlan)}</div>`
+function toggleCompare() {
+  const body = document.getElementById('compare-body')
+  const toggle = document.getElementById('compare-toggle')
+  const chevron = document.getElementById('compare-chevron')
+  const open = body.style.display === 'none'
+  body.style.display = open ? 'block' : 'none'
+  toggle.classList.toggle('open', open)
+  chevron.style.transform = open ? 'rotate(180deg)' : ''
 }
 
-function updateSliderDisplay(ava,min) {
-  document.getElementById('si-date').textContent=fmtDate(ava.months)
-  document.getElementById('si-saved').textContent=fmt(min.totalInterest-ava.totalInterest)
-}
 
-// ═══════════════════════════════════════
-//  PDF GENERATION
-// ═══════════════════════════════════════
-function generatePDF() {
-  const btn = document.getElementById('pdf-btn')
-  btn.textContent = 'Generating your plan...'
-  btn.disabled = true
-
-  loadJsPDF(() => {
-  setTimeout(() => {
-    try {
-      const { jsPDF } = window.jspdf
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
-      const pw = 215.9, ph = 279.4
-      const ml = 18, mr = 18, mt = 16
-      const cw = pw - ml - mr
-      let y = mt
-
-      const RED = [255, 77, 46]
-      const DARK = [10, 14, 18]
-      const MID = [107, 114, 128]
-      const LIGHT = [232, 228, 220]
-      const BG = [247, 245, 240]
-      const GREEN = [255, 77, 46]
-      const WHITE = [255, 255, 255]
-
-      const { valid, totalDebt, totalMin, totalOblig, totalExp, available, dti, totalUtil, ccDebts, coFee, minimums, avalanche, snowball, highestApr } = calcD
-      const avaBetter = avalanche.totalInterest <= snowball.totalInterest
-      const extra = Math.max(0, Math.floor(available / 25) * 25)
-      const avaFull = runAvalanche(valid, extra)
-      const snowFull = runSnowball(valid, extra)
-      const intSavedAva = minimums.totalInterest - avaFull.totalInterest
-      const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
-
-      function newPage() {
-        doc.addPage()
-        y = mt
-        // Footer on each page
-        doc.setFontSize(7).setTextColor(...MID)
-        doc.text('debtself planner  |  debtself.com  |  Educational software. Results are estimates. Not financial or legal advice.', pw / 2, ph - 8, { align: 'center' })
-      }
-
-      function checkY(needed) {
-        if (y + needed > ph - 16) newPage()
-      }
-
-      function sectionHeader(title) {
-        checkY(10)
-        doc.setFillColor(...BG)
-        doc.rect(ml, y, cw, 7, 'F')
-        doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'bold')
-        doc.text(title.toUpperCase(), ml + 3, y + 4.5)
-        y += 10
-      }
-
-      function row(label, value, bold, valueColor) {
-        checkY(7)
-        doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', bold ? 'bold' : 'normal')
-        doc.text(label, ml, y)
-        doc.setTextColor(...(valueColor || DARK))
-        doc.text(value, pw - mr, y, { align: 'right' })
-        doc.setDrawColor(...LIGHT)
-        doc.line(ml, y + 1.5, pw - mr, y + 1.5)
-        y += 7
-      }
-
-      // ── PAGE 1: HEADER ──
-      doc.setFillColor(...DARK)
-      doc.rect(0, 0, pw, 28, 'F')
-      doc.setFontSize(18).setTextColor(...WHITE).setFont('helvetica', 'bold')
-      doc.text('debt', ml, 17)
-      const dw = doc.getTextWidth('debt')
-      doc.setTextColor(...RED)
-      doc.text('/', ml + dw, 17)
-      const sw = doc.getTextWidth('/')
-      doc.setTextColor(...WHITE)
-      doc.text('self', ml + dw + sw, 17)
-      doc.setFontSize(10).setTextColor(200, 198, 195).setFont('helvetica', 'normal')
-      doc.text('planner', ml + dw + sw + doc.getTextWidth('self') + 3, 17)
-      doc.setFontSize(8).setTextColor(150, 148, 145)
-      doc.text('Your personalized debt freedom plan', pw - mr, 12, { align: 'right' })
-      doc.text('Generated ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), pw - mr, 20, { align: 'right' })
-      y = 36
-
-      // ── RECOMMENDATION BOX ──
-      const recText = document.getElementById('rec-text').textContent
-      doc.setFillColor(...BG)
-      doc.roundedRect(ml, y, cw, 2, 2, 2, 'F')
-      doc.setFontSize(8).setTextColor(...RED).setFont('helvetica', 'bold')
-      doc.text('YOUR PERSONALIZED RECOMMENDATION', ml + 3, y + 5)
-      y += 8
-      doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', 'normal')
-      const recLines = doc.splitTextToSize(recText, cw - 6)
-      doc.setFillColor(...BG)
-      doc.rect(ml, y, cw, recLines.length * 5 + 6, 'F')
-      doc.setDrawColor(...RED)
-      doc.line(ml, y, ml, y + recLines.length * 5 + 6)
-      doc.text(recLines, ml + 4, y + 5)
-      y += recLines.length * 5 + 12
-
-      // ── DEBT SUMMARY ──
-      sectionHeader('Your Accounts')
-      valid.forEach(d => {
-        checkY(7)
-        const util = d.type === 'cc' && Number(d.limit) > 0
-          ? ' (' + Math.round((Number(d.balance) / Number(d.limit)) * 100) + '% util)'
-          : ''
-        doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', 'normal')
-        doc.text((d.name || 'Account') + util, ml, y)
-        doc.text(fmt(Number(d.balance)), ml + 90, y, { align: 'right' })
-        doc.setTextColor(...MID)
-        doc.text((Number(d.apr) || 22.99).toFixed(2) + '% APR', ml + 120, y, { align: 'right' })
-        doc.text('Min ' + fmt(Number(d.minPay)), pw - mr, y, { align: 'right' })
-        doc.setDrawColor(...LIGHT)
-        doc.line(ml, y + 1.5, pw - mr, y + 1.5)
-        y += 7
-      })
-      checkY(8)
-      doc.setFontSize(10).setTextColor(...DARK).setFont('helvetica', 'bold')
-      doc.text('Total debt', ml, y)
-      doc.setTextColor(...RED)
-      doc.text(fmt(totalDebt), pw - mr, y, { align: 'right' })
-      y += 12
-
-      // ── BUDGET SUMMARY ──
-      sectionHeader('Your Budget Breakdown')
-      row('Monthly take-home', fmt(S.monthlyIncome))
-      row('Living expenses', fmt(totalExp))
-      if (totalOblig > 0) row('Other obligations', fmt(totalOblig))
-      row('Minimum debt payments', fmt(totalMin))
-      row('Available for debt payoff', fmt(Math.abs(available)) + (available < 0 ? ' deficit' : ''), true, RED)
-      checkY(8)
-      doc.setFontSize(9).setTextColor(...MID).setFont('helvetica', 'normal')
-      doc.text('Debt-to-income ratio: ' + dti + '%  |  Total utilization: ' + totalUtil + '%', ml, y)
-      y += 12
-
-      // ── PATH COMPARISON ──
-      sectionHeader('All Your Options Compared')
-
-      function pathRow(name, debtFreeBy, totalInterest, interestSaved, note, savedColor) {
-        checkY(20)
-        doc.setFillColor(...WHITE)
-        doc.setDrawColor(...LIGHT)
-        doc.roundedRect(ml, y, cw, 18, 2, 2, 'FD')
-        doc.setFontSize(10).setTextColor(...DARK).setFont('helvetica', 'bold')
-        doc.text(name, ml + 3, y + 6)
-        doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'normal')
-        doc.text(note, ml + 3, y + 11)
-        doc.setFontSize(8).setTextColor(...MID)
-        doc.text('Debt free by', ml + 3, y + 16)
-        doc.text('Total interest', ml + 65, y + 16)
-        doc.text('Interest saved', ml + 120, y + 16)
-        doc.setFontSize(9).setFont('helvetica', 'bold').setTextColor(...DARK)
-        doc.text(debtFreeBy, ml + 3, y + 21)
-        doc.text(totalInterest, ml + 65, y + 21)
-        doc.setTextColor(...(savedColor || RED))
-        doc.text(interestSaved, ml + 120, y + 21)
-        y += 22
-      }
-
-      pathRow(
-        'Avalanche method ' + (avaBetter ? '(RECOMMENDED)' : ''),
-        fmtDate(avaFull.months),
-        fmt(avaFull.totalInterest),
-        fmt(intSavedAva),
-        'Pay highest APR first. Mathematically cheapest. Best if you can stay motivated for the long haul.'
-      )
-      pathRow(
-        'Snowball method ' + (!avaBetter ? '(RECOMMENDED)' : ''),
-        fmtDate(snowFull.months),
-        fmt(snowFull.totalInterest),
-        fmt(intSavedSnow),
-        'Pay smallest balance first. May cost more in interest but builds momentum with early wins.'
-      )
-      pathRow(
-        'Minimum payments only',
-        fmtDate(minimums.months),
-        fmt(minimums.totalInterest),
-        '--',
-        'Stay current with no extra effort. The most expensive path over time.',
-        MID
-      )
-
-      // ── PAGE 2: PAYMENT PLAN ──
-      newPage()
-      doc.setFillColor(...DARK)
-      doc.rect(0, 0, pw, 20, 'F')
-      doc.setFontSize(13).setTextColor(...WHITE).setFont('helvetica', 'bold')
-      doc.text((avaBetter ? 'Avalanche' : 'Snowball') + ' Method: Your Step-by-Step Payment Plan', ml, 13)
-      y = 28
-
-      // Extra payment note
-      if (extra > 0) {
-        doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', 'normal')
-        doc.setFillColor(...BG)
-        doc.rect(ml, y, cw, 8, 'F')
-        doc.text('This plan includes ' + fmt(extra) + '/mo extra payment above minimums based on your available budget.', ml + 3, y + 5)
-        y += 12
-      }
-
-      // Column headers
-      doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'bold')
-      doc.text('CHECK', ml, y)
-      doc.text('MONTH', ml + 14, y)
-      doc.text('ACCOUNT', ml + 34, y)
-      doc.text('ACTION', ml + 100, y)
-      doc.text('PAYMENT', pw - mr, y, { align: 'right' })
-      doc.setDrawColor(...RED)
-      doc.line(ml, y + 2, pw - mr, y + 2)
-      y += 7
-
-      // Generate the plan
-      const plan = generatePlan(valid, extra, avaBetter ? 'avalanche' : 'snowball')
-      plan.forEach((step, idx) => {
-        checkY(10)
-
-        if (step.type === 'start') {
-          // Checkbox
-          doc.setDrawColor(...LIGHT)
-          doc.rect(ml, y - 3.5, 4, 4)
-          doc.setFontSize(8).setTextColor(...DARK).setFont('helvetica', 'normal')
-          doc.text('Month 1', ml + 14, y)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Start your plan', ml + 34, y)
-          doc.setFont('helvetica', 'normal').setTextColor(...MID)
-          doc.text('Pay minimums on all accounts', ml + 100, y)
-          doc.setTextColor(...RED)
-          doc.text(fmt(step.targetPay) + '/mo', pw - mr, y, { align: 'right' })
-        } else if (step.type === 'payoff') {
-          doc.setDrawColor(...LIGHT)
-          doc.rect(ml, y - 3.5, 4, 4)
-          doc.setFontSize(8).setTextColor(...DARK).setFont('helvetica', 'normal')
-          doc.text('Month ' + step.month, ml + 14, y)
-          doc.setFont('helvetica', 'bold')
-          doc.text(step.name, ml + 34, y)
-          // PAID OFF label: draw as small caps text on same row, after account name — no overlapping badge
-          const nameW = doc.getTextWidth(step.name)
-          doc.setFontSize(6.5).setTextColor(...RED).setFont('helvetica', 'bold')
-          doc.text('PAID OFF', ml + 34 + nameW + 3, y)
-          if (step.nextName) {
-            doc.setFontSize(7.5).setTextColor(...MID).setFont('helvetica', 'normal')
-            doc.text('Roll ' + fmt(step.freed) + '/mo onto ' + step.nextName, ml + 100, y)
-            doc.setTextColor(...RED)
-            doc.text(fmt(step.newPay) + '/mo', pw - mr, y, { align: 'right' })
-          }
-        } else if (step.type === 'done') {
-          checkY(12)
-          doc.setFillColor(...GREEN)
-          doc.rect(ml, y, cw, 10, 'F')
-          doc.setFontSize(10).setTextColor(...WHITE).setFont('helvetica', 'bold')
-          doc.text('Month ' + step.month + ': DEBT FREE', ml + 3, y + 6.5)
-          doc.setFontSize(8).setFont('helvetica', 'normal')
-          doc.text('Every account paid off. That monthly payment is now yours.', pw - mr, y + 6.5, { align: 'right' })
-          y += 14
-          return
-        }
-
-        doc.setDrawColor(...LIGHT)
-        doc.line(ml, y + 2, pw - mr, y + 2)
-        y += 8
-      })
-
-      // ── MONTHLY CHECKLIST ──
-      checkY(20)
-      y += 4
-      doc.setFontSize(11).setTextColor(...DARK).setFont('helvetica', 'bold')
-      doc.text('Monthly Checklist', ml, y)
-      y += 8
-      doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'normal')
-      doc.text('Check off each month as you make your payments. Write your actual balance to track progress.', ml, y)
-      y += 8
-
-      // Checklist header
-      doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'bold')
-      doc.text('DONE', ml, y)
-      doc.text('MONTH', ml + 12, y)
-      doc.text('FOCUS ACCOUNT', ml + 40, y)
-      doc.text('TARGET PAYMENT', ml + 110, y)
-      doc.text('ACTUAL BALANCE', pw - mr, y, { align: 'right' })
-      doc.setDrawColor(...RED)
-      doc.line(ml, y + 2, pw - mr, y + 2)
-      y += 7
-
-      // Generate month by month checklist from plan
-      let currentAccount = valid[0]?.name || 'Account'
-      let currentPayment = (Number(valid[0]?.minPay) || 0) + extra
-      let checkMonth = 1
-
-      plan.forEach(step => {
-        if (step.type === 'done') return
-        const endMonth = step.type === 'payoff' ? step.month : (plan.find(s => s.type === 'payoff')?.month || minimums.months)
-
-        while (checkMonth <= Math.min(endMonth, checkMonth + (step.type === 'payoff' ? 0 : 5))) {
-          checkY(8)
-          doc.setDrawColor(...LIGHT)
-          doc.rect(ml, y - 3.5, 4, 4)
-          doc.setFontSize(8).setTextColor(...DARK).setFont('helvetica', 'normal')
-          doc.text('Month ' + checkMonth, ml + 12, y)
-          doc.text(currentAccount, ml + 40, y)
-          doc.setTextColor(...RED)
-          doc.text(fmt(currentPayment) + '/mo', ml + 110, y)
-          doc.setTextColor(...LIGHT)
-          doc.text('$___________', pw - mr, y, { align: 'right' })
-          doc.setDrawColor(...LIGHT)
-          doc.line(ml, y + 2, pw - mr, y + 2)
-          y += 7
-          checkMonth++
-          if (step.type !== 'payoff') break
-        }
-
-        if (step.type === 'payoff' && step.nextName) {
-          currentAccount = step.nextName
-          currentPayment = step.newPay
-        }
-      })
-
-      // ── DEBTSELF MENTION ──
-      if (calcD.coFee > 0) {
-        checkY(20)
-        y += 4
-        doc.setFillColor(...DARK)
-        doc.roundedRect(ml, y, cw, 22, 2, 2, 'F')
-        doc.setFontSize(7).setTextColor(150, 148, 145).setFont('helvetica', 'normal')
-        doc.text('IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU', ml + 3, y + 5)
-        doc.setFontSize(9).setTextColor(...WHITE).setFont('helvetica', 'bold')
-        doc.text('Settlement companies charge ' + fmt(coFee) + ' to manage this process on your balance.', ml + 3, y + 11)
-        doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(200, 198, 195)
-        doc.text('debtself.com gives you the exact same process for $249 flat. Worth knowing before you sign with anyone.', ml + 3, y + 17)
-        y += 26
-      }
-
-      // Footer on first page
-      doc.setPage(1)
-      doc.setFontSize(7).setTextColor(...MID).setFont('helvetica', 'normal')
-      doc.text('debtself planner  |  debtself.com  |  Educational software. Results are estimates. Not financial or legal advice.', pw / 2, ph - 8, { align: 'center' })
-
-      doc.save('debtself-plan-' + new Date().toISOString().split('T')[0] + '.pdf')
-
-    } catch (err) {
-      console.error('PDF generation error:', err)
-      alert('There was an issue generating your PDF. Please try again.')
-    } finally {
-      const btn = document.getElementById('pdf-btn')
-      btn.textContent = '⬇ Save my plan as PDF'
-      btn.disabled = false
-    }
-  }, 100)
-  }) // end loadJsPDF
-}
+// PDF generation removed
 // ═══════════════════════════════════════
 //  PLANNER EMAIL CAPTURE
 // ═══════════════════════════════════════
