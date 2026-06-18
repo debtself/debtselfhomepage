@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>debtself planner — Your Complete Debt Plan</title>
+  <script>
+    // Auth check — must have valid session from gate screen
+    ;(function() {
+      try {
+        const session = JSON.parse(localStorage.getItem('planner_session') || 'null')
+        if (!session || !session.token) {
+          window.location.replace('/planner/')
+        }
+      } catch(e) {
+        window.location.replace('/planner/')
+      }
+    })()
+
+    // Load jsPDF lazily only when PDF export is triggered
+    function loadJsPDF(callback) {
+      if (window.jspdf) { callback(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = callback;
+      s.onerror = () => alert('PDF export requires an internet connection. Please connect and try again.');
+      document.head.appendChild(s);
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red:#FF4D2E; --dark:#0A0E12; --bg:#F7F5F0; --white:#FFFFFF;
+      --muted:#6B7280; --border:#E8E4DC; --green:#1A7F5A; --amber:#92400E;
+      --blue:#1D4ED8; --red-soft:rgba(255,77,46,0.08); --green-soft:rgba(26,127,90,0.08);
+      --blue-soft:rgba(29,78,216,0.08); --amber-soft:#FEF3C7;
+      --serif:'Instrument Serif',serif; --sans:'Familjen Grotesk',sans-serif; --mono:'JetBrains Mono',monospace;
+    }
+    html,body { background:var(--bg); color:var(--dark); font-family:var(--sans); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+    /* TOPBAR */
+    .topbar {
+      background: var(--dark);
+      border-bottom: none;
+      padding: 0 20px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .wm { display:flex; align-items:baseline; }
+    .wm-t { font-family:var(--sans); font-weight:700; font-size:17px; color:#FAF8F3; }
+    .wm-s { font-family:var(--sans); font-weight:700; font-size:17px; color:var(--red); }
+    .wm-p { font-family:'Instrument Serif',serif; font-style:italic; font-size:16px; color:rgba(250,248,243,0.55); margin-left:7px; font-weight:400; letter-spacing:0.01em; }
+    .topbar-step {
+      font-family:var(--mono);
+      font-size:9px;
+      color:rgba(250,248,243,0.35);
+      letter-spacing:.14em;
+      text-transform:uppercase;
+    }
+
+    /* PROGRESS BAR */
+    .progress-track { height:2px; background:rgba(255,77,46,0.15); position:sticky; top:52px; z-index:99; }
+    .progress-fill { height:100%; background:var(--red); transition:width .4s ease; }
+
+    /* SCREENS */
+    .screen { display:none; background:var(--bg); min-height:100vh; }
+    .screen.active { display:block; animation:fadeIn .25s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    #s-con { background:var(--dark); }
+    #s-unlock { background:var(--white); }
+
+    /* WRAP */
+    .wrap { max-width:520px; margin:0 auto; padding:32px 20px 80px; }
+
+    /* TYPOGRAPHY */
+    .eyebrow { font-family:var(--mono); font-size:10px; color:var(--red); letter-spacing:.18em; text-transform:uppercase; margin-bottom:10px; }
+    .eyebrow.m { color:var(--muted); }
+    .headline { font-family:var(--serif); font-style:italic; font-size:28px; color:var(--dark); line-height:1.2; margin-bottom:12px; }
+    .sub { font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:24px; }
+
+    /* PILLARS */
+    .pillars { display:flex; flex-direction:column; gap:8px; margin-bottom:32px; }
+    .pillar { display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 16px; }
+    .pillar-dot { width:7px; height:7px; border-radius:50%; background:var(--red); flex-shrink:0; }
+    .pillar-text { font-size:13px; color:var(--dark); font-weight:500; line-height:1.4; }
+
+    /* BUTTONS */
+    .btn { width:100%; background:var(--red); color:white; border:none; border-radius:10px; padding:17px; font-size:16px; font-weight:700; font-family:var(--sans); cursor:pointer; transition:opacity .15s; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .btn:hover { opacity:.9; }
+    .btn:active { opacity:.75; }
+    .btn:disabled { opacity:.35; cursor:not-allowed; }
+    .btn-ghost { width:100%; background:none; border:1px solid var(--border); border-radius:10px; padding:14px; font-size:14px; color:var(--muted); font-family:var(--sans); cursor:pointer; margin-top:10px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+
+    /* DEBT ENTRY */
+    .debt-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .debt-hdr-title { font-family:var(--serif); font-size:22px; color:var(--dark); }
+    .badge { font-family:var(--mono); font-size:10px; background:var(--red-soft); color:var(--red); padding:4px 10px; border-radius:20px; }
+    .debt-cards { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+    .dcard { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:16px; }
+    .dcard-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .dcard-lbl { font-size:13px; font-weight:700; color:var(--dark); }
+    .dcard-rm { background:none; border:none; cursor:pointer; font-size:20px; color:var(--muted); padding:0 2px; line-height:1; }
+    .dcard-rm:hover { color:var(--red); }
+    .type-toggle { display:flex; gap:6px; margin-bottom:12px; }
+    .type-btn { flex:1; background:var(--bg); border:1.5px solid var(--border); border-radius:7px; padding:8px; font-size:12px; font-weight:600; font-family:var(--sans); cursor:pointer; color:var(--muted); transition:all .15s; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .type-btn.active { background:var(--red-soft); border-color:var(--red); color:var(--red); }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+    .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
+    .fl { display:flex; flex-direction:column; gap:4px; }
+    .fl-lbl { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; }
+    .fl-inp { background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:10px 11px; font-size:16px; font-family:var(--mono); color:var(--dark); outline:none; width:100%; transition:border-color .15s; -moz-appearance:textfield; -webkit-appearance:none; }
+    .fl-inp:focus { border-color:var(--red); background:var(--white); }
+    .fl-sel { background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:10px 11px; font-size:15px; font-family:var(--sans); color:var(--dark); outline:none; width:100%; -webkit-appearance:none; }
+    .fl-sel:focus { border-color:var(--red); }
+    .util-bar-wrap { margin-top:8px; display:none; }
+    .util-bar-lbl { font-size:11px; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
+    .util-track { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .util-fill { height:100%; border-radius:3px; transition:width .3s,background .3s; }
+    .btn-add { width:100%; background:none; border:1.5px dashed var(--border); border-radius:10px; padding:13px; font-size:13px; color:var(--muted); font-family:var(--sans); cursor:pointer; transition:all .15s; margin-bottom:20px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .btn-add:hover { border-color:var(--red); color:var(--red); background:var(--red-soft); }
+
+    /* CREDIT SCORE */
+    .score-options { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; }
+    .score-opt { background:var(--white); border:1.5px solid var(--border); border-radius:12px; padding:16px 18px; cursor:pointer; transition:all .15s; display:flex; justify-content:space-between; align-items:center; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .score-opt:hover { border-color:var(--red); background:var(--red-soft); }
+    .score-opt.sel { border-color:var(--red); border-left-width:3px; background:var(--red-soft); }
+    .score-opt-name { font-size:15px; font-weight:600; color:var(--dark); }
+    .score-opt-range { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .score-opt.sel .score-opt-range { color:var(--red); }
+    .score-note { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:24px; }
+    .score-note a { color:var(--red); text-decoration:none; }
+
+    /* BUDGET */
+    .budget-q { margin-bottom:28px; }
+    .budget-q-title { font-family:var(--serif); font-size:22px; color:var(--dark); line-height:1.3; margin-bottom:6px; }
+    .budget-q-sub { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:16px; }
+    .budget-ack { font-size:13px; color:var(--green); font-weight:600; margin-bottom:16px; font-style:italic; min-height:20px; }
+    .freq-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+    .freq-opt { background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:13px; text-align:center; cursor:pointer; transition:all .15s; font-size:13px; font-weight:500; color:var(--muted); }
+    .freq-opt.sel { border-color:var(--red); color:var(--red); background:var(--red-soft); }
+    .amount-inp-wrap { position:relative; margin-bottom:20px; }
+    .amount-prefix { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--dark); font-family:var(--mono); font-weight:600; }
+    .amount-inp { width:100%; background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:14px 14px 14px 30px; font-size:22px; font-family:var(--mono); font-weight:600; color:var(--dark); outline:none; transition:border-color .15s; -moz-appearance:textfield; -webkit-appearance:none; }
+    .amount-inp:focus { border-color:var(--red); }
+    .monthly-equiv { font-family:var(--mono); font-size:12px; color:var(--red); margin-top:6px; min-height:18px; font-weight:600; }
+    .budget-cats { display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
+    .budget-cat { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .budget-cat-info { flex:1; }
+    .budget-cat-name { font-size:14px; font-weight:600; color:var(--dark); margin-bottom:2px; }
+    .budget-cat-hint { font-size:11px; color:var(--muted); }
+    .budget-cat-inp-wrap { position:relative; flex-shrink:0; width:120px; }
+    .budget-cat-prefix { position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:14px; color:var(--muted); font-family:var(--mono); }
+    .budget-cat-inp { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:9px 9px 9px 22px; font-size:16px; font-family:var(--mono); color:var(--dark); outline:none; -moz-appearance:textfield; -webkit-appearance:none; }
+    .budget-cat-inp:focus { border-color:var(--red); background:var(--white); }
+
+    /* COST OF NOTHING */
+    .con-screen { min-height:calc(100vh - 52px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; background:var(--dark); }
+    .con-eyebrow { font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.35); letter-spacing:.18em; text-transform:uppercase; margin-bottom:20px; }
+    .con-lead { font-size:15px; color:rgba(255,255,255,.6); margin-bottom:20px; line-height:1.6; max-width:320px; }
+    .con-ticker { font-family:var(--mono); font-size:60px; font-weight:600; line-height:1; margin-bottom:8px; transition:color .5s; }
+    .con-ticker-sub { font-family:var(--mono); font-size:11px; color:rgba(255,255,255,.3); margin-bottom:12px; letter-spacing:.08em; }
+    .con-headline { font-family:var(--serif); font-style:italic; font-size:21px; color:white; line-height:1.35; max-width:340px; margin:0 auto 36px; }
+    .btn-light { background:var(--red); color:white; border:none; border-radius:10px; padding:15px 40px; font-size:16px; font-weight:700; font-family:var(--sans); cursor:pointer; }
+
+    /* BUDGET UNLOCK */
+    .unlock-screen { background:var(--white); }
+    .unlock-hero { background:var(--dark); padding:32px 20px 28px; text-align:center; }
+    .unlock-eyebrow { font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.35); letter-spacing:.18em; text-transform:uppercase; margin-bottom:14px; }
+    .unlock-headline { font-family:var(--serif); font-style:italic; font-size:24px; color:white; line-height:1.3; margin-bottom:0; }
+    .unlock-table { max-width:520px; margin:0 auto; padding:28px 20px 0; }
+    .unlock-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
+    .unlock-row:last-child { border-bottom:none; }
+    .unlock-row-lbl { font-size:14px; color:var(--muted); }
+    .unlock-row-val { font-family:var(--mono); font-size:15px; font-weight:600; color:var(--dark); }
+    .unlock-row.total { padding-top:16px; margin-top:4px; }
+    .unlock-row.total .unlock-row-lbl { font-size:15px; font-weight:700; color:var(--dark); }
+    .unlock-row.total .unlock-row-val { font-size:20px; color:var(--green); }
+    .unlock-row.total.neg .unlock-row-val { color:var(--red); }
+    .unlock-verdict { max-width:520px; margin:0 auto; padding:20px 20px 32px; }
+    .verdict-box { border-radius:12px; padding:16px 18px; }
+    .verdict-box.positive { background:var(--green-soft); border:1px solid rgba(26,127,90,.2); }
+    .verdict-box.warning { background:var(--amber-soft); border:1px solid rgba(146,64,14,.2); }
+    .verdict-box.negative { background:var(--red-soft); border:1px solid rgba(255,77,46,.2); }
+    .verdict-title { font-size:14px; font-weight:700; color:var(--dark); margin-bottom:6px; }
+    .verdict-text { font-size:13px; color:var(--muted); line-height:1.7; }
+    .dti-row { max-width:520px; margin:0 auto; padding:0 20px 20px; }
+    .dti-box { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+    .dti-lbl { font-size:12px; color:var(--muted); }
+    .dti-val { font-family:var(--mono); font-size:18px; font-weight:600; }
+    .util-row { max-width:520px; margin:0 auto; padding:0 20px 24px; display:flex; flex-direction:column; gap:8px; }
+    .util-card { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+    .util-card-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .util-card-name { font-size:13px; font-weight:600; color:var(--dark); }
+    .util-card-pct { font-family:var(--mono); font-size:13px; font-weight:600; }
+    .util-track2 { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .util-fill2 { height:100%; border-radius:3px; transition:width .4s; }
+    .util-tip { font-size:11px; color:var(--muted); margin-top:5px; line-height:1.5; }
+
+    /* RESULTS */
+    .rec-header { background:var(--white); border-bottom:1px solid var(--border); padding:22px 20px; }
+    .rec-inner { max-width:520px; margin:0 auto; }
+    .rec-text { font-size:14px; color:var(--dark); line-height:1.8; border-left:3px solid var(--red); padding-left:14px; font-style:italic; }
+
+    /* SLIDER SECTION */
+    .slider-sec { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:16px; }
+    .slider-sec-title { font-size:14px; font-weight:700; color:var(--dark); margin-bottom:3px; }
+    .slider-sec-sub { font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+    .slider-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .main-slider { flex:1; accent-color:var(--red); }
+    .slider-val { font-family:var(--mono); font-size:14px; font-weight:600; color:var(--red); min-width:65px; text-align:right; }
+    .slider-impact { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .impact-box { background:var(--bg); border-radius:8px; padding:12px; text-align:center; }
+    .impact-lbl { font-size:10px; color:var(--muted); margin-bottom:4px; }
+    .impact-val { font-family:var(--mono); font-size:15px; font-weight:600; color:var(--green); }
+
+    /* PATH CARDS */
+    .paths-title { font-family:var(--serif); font-size:20px; color:var(--dark); margin-bottom:4px; margin-top:8px; }
+    .paths-sub { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+    .pcard { background:var(--white); border:1px solid var(--border); border-radius:14px; margin-bottom:10px; overflow:hidden; }
+    .pcard.best { border-color:var(--green); border-left-width:3px; }
+    .pcard.warn { border-color:#F59E0B; }
+    .pcard-head { padding:18px 18px 0; cursor:pointer; user-select:none; }
+    .pcard-head-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+    .pcard-name { font-size:15px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+    .pcard-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+    .pcard-badge { font-family:var(--mono); font-size:9px; padding:3px 8px; border-radius:4px; letter-spacing:.08em; white-space:nowrap; flex-shrink:0; margin-left:10px; }
+    .bg-green { background:var(--green-soft); color:var(--green); }
+    .bg-red { background:var(--red-soft); color:var(--red); }
+    .bg-amber { background:var(--amber-soft); color:var(--amber); }
+    .bg-blue { background:var(--blue-soft); color:var(--blue); }
+    .bg-gray { background:rgba(107,114,128,.1); color:var(--muted); }
+    .pcard-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 18px 14px; }
+    .pm { text-align:center; }
+    .pm-lbl { font-size:10px; color:var(--muted); margin-bottom:3px; }
+    .pm-val { font-family:var(--mono); font-size:12px; font-weight:600; color:var(--dark); }
+    .pm-val.g { color:var(--green); }
+    .pm-val.r { color:var(--red); }
+    .pm-val.a { color:var(--amber); }
+    .pm-val.b { color:var(--blue); }
+    .pcard-credit { display:flex; align-items:center; gap:10px; padding:10px 18px 14px; border-top:1px solid var(--border); }
+    .credit-lbl { font-size:11px; color:var(--muted); white-space:nowrap; }
+    .credit-track { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .credit-fill { height:100%; border-radius:3px; }
+    .credit-txt { font-family:var(--mono); font-size:9px; color:var(--muted); white-space:nowrap; }
+    .pcard-toggle { width:100%; background:none; border:none; border-top:1px solid var(--border); padding:11px 18px; font-size:12px; font-weight:600; color:var(--red); font-family:var(--sans); cursor:pointer; text-align:left; display:flex; align-items:center; gap:6px; }
+    .toggle-arrow { font-size:9px; transition:transform .2s; }
+    .toggle-arrow.open { transform:rotate(180deg); }
+    .pcard-body { display:none; padding:0 18px 18px; border-top:1px solid var(--border); }
+    .pcard-body.open { display:block; }
+
+    /* PLAN STEPS */
+    .plan-eyebrow { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:.14em; text-transform:uppercase; margin:14px 0 10px; }
+    .plan-steps { display:flex; flex-direction:column; }
+    .plan-step { display:flex; gap:14px; padding:11px 0; border-bottom:1px solid var(--border); }
+    .plan-step:last-child { border-bottom:none; }
+    .ps-left { flex-shrink:0; width:48px; }
+    .ps-month { font-family:var(--mono); font-size:9px; color:var(--muted); line-height:1.4; }
+    .ps-right { flex:1; }
+    .ps-account { font-size:13px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+    .ps-detail { font-size:11px; color:var(--muted); line-height:1.5; }
+    .ps-amount { font-family:var(--mono); font-size:12px; font-weight:600; color:var(--green); margin-top:2px; }
+    .ps-paid { display:inline-block; background:var(--green-soft); color:var(--green); font-family:var(--mono); font-size:9px; padding:2px 7px; border-radius:3px; margin-top:3px; }
+    .ps-rollover { background:var(--red-soft); border-radius:6px; padding:7px 10px; margin-top:7px; font-size:11px; color:var(--red); line-height:1.5; }
+
+    /* CONSOLIDATION ODDS */
+    .odds-box { border-radius:10px; padding:14px 16px; margin-bottom:10px; }
+    .odds-box.strong { background:var(--green-soft); border:1px solid rgba(26,127,90,.2); }
+    .odds-box.moderate { background:var(--blue-soft); border:1px solid rgba(29,78,216,.2); }
+    .odds-box.lower { background:var(--amber-soft); border:1px solid rgba(146,64,14,.15); }
+    .odds-box.not-rec { background:rgba(107,114,128,.08); border:1px solid var(--border); }
+    .odds-title { font-size:13px; font-weight:700; color:var(--dark); margin-bottom:6px; }
+    .odds-text { font-size:12px; color:var(--muted); line-height:1.7; }
+
+    /* DEBTSELF MENTION */
+    .ds-mention { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:8px; }
+    .ds-mention-eyebrow { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px; }
+    .ds-mention-text { font-size:14px; color:var(--dark); line-height:1.75; }
+    .ds-mention-text a { color:var(--red); text-decoration:none; font-weight:600; }
+
+    /* PRINT */
+    .print-btn { width:100%; background:none; border:1px solid var(--border); border-radius:10px; padding:14px; font-size:14px; color:var(--dark); font-family:var(--sans); cursor:pointer; margin-top:16px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; }
+    .print-btn:hover { border-color:var(--red); color:var(--red); }
+
+    /* UTILIZATION CALLOUT */
+    .util-callout { background:var(--amber-soft); border:1px solid rgba(146,64,14,.2); border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+    .util-callout-title { font-size:13px; font-weight:700; color:var(--amber); margin-bottom:6px; }
+    .util-callout-text { font-size:12px; color:var(--amber); line-height:1.6; }
+
+    /* DISCLAIMER */
+    .disclaimer { font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.7; text-align:center; opacity:.6; margin-top:24px; padding:0 8px; }
+
+    /* DEBTSELF CTA BLOCK */
+    .ds-block { background:var(--dark); border-radius:16px; padding:28px 24px; margin:28px 0 16px; }
+    .ds-block-eyebrow { font-family:var(--mono); font-size:9px; font-weight:600; color:var(--red); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px; }
+    .ds-block-headline { font-size:17px; font-weight:700; color:#FAF8F3; margin-bottom:8px; line-height:1.35; }
+    .ds-block-sub { font-size:13px; color:rgba(250,248,243,0.55); line-height:1.6; margin-bottom:16px; }
+    .ds-block-keep { font-size:13px; color:rgba(250,248,243,0.6); margin-bottom:18px; }
+    .ds-block-keep-num { font-weight:700; color:var(--red); font-size:15px; }
+    .ds-block-btn { display:block; background:var(--red); color:white; text-decoration:none; border-radius:10px; padding:14px 20px; font-size:15px; font-weight:700; font-family:var(--sans); text-align:center; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+
+    /* EMAIL CAPTURE */
+    .email-capture { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:20px; margin:16px 0 20px; }
+    .email-capture-label { font-size:14px; font-weight:600; color:var(--dark); margin-bottom:4px; }
+    .email-capture-sub { font-size:12px; color:var(--muted); margin-bottom:12px; }
+    .email-capture-row { display:flex; gap:8px; }
+    .email-capture-input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:11px 13px; font-size:15px; font-family:var(--sans); color:var(--dark); outline:none; -webkit-appearance:none; transition:border-color 0.15s; }
+    .email-capture-input:focus { border-color:var(--red); background:var(--white); }
+    .email-capture-btn { background:var(--red); color:white; border:none; border-radius:8px; padding:11px 18px; font-size:14px; font-weight:700; font-family:var(--sans); cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
+    .email-capture-btn:disabled { opacity:0.45; }
+    .email-capture-status { font-size:12px; margin-top:8px; min-height:16px; color:var(--muted); }
+
+    /* OTHER OBLIGATIONS */
+    .oblig-section { margin-bottom:24px; }
+    .oblig-title { font-size:14px; font-weight:700; color:var(--dark); margin-bottom:4px; }
+    .oblig-sub { font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:12px; }
+    .oblig-list { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+    .oblig-row { display:flex; gap:8px; align-items:center; background:var(--white); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+    .oblig-name { flex:1; background:none; border:none; font-size:14px; font-family:var(--sans); color:var(--dark); outline:none; min-width:0; }
+    .oblig-name::placeholder { color:var(--muted); }
+    .oblig-amount-wrap { position:relative; flex-shrink:0; width:100px; }
+    .oblig-prefix { position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--muted); font-family:var(--mono); }
+    .oblig-amount { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:7px 7px 7px 18px; font-size:15px; font-family:var(--mono); color:var(--dark); outline:none; -moz-appearance:textfield; -webkit-appearance:none; }
+    .oblig-rm { background:none; border:none; cursor:pointer; font-size:18px; color:var(--muted); padding:0 2px; flex-shrink:0; line-height:1; }
+    .oblig-rm:hover { color:var(--red); }
+    .btn-add-oblig { background:none; border:1.5px dashed var(--border); border-radius:8px; padding:10px; font-size:13px; color:var(--muted); font-family:var(--sans); cursor:pointer; width:100%; transition:all .15s; }
+    .btn-add-oblig:hover { border-color:var(--red); color:var(--red); background:var(--red-soft); }
+
+    /* MOBILE */
+    @media(max-width:480px){
+      .wrap{padding:24px 16px 80px;}
+      .headline{font-size:24px;}
+      .grid3{grid-template-columns:1fr 1fr;}
+      .grid3 .fl:last-child{grid-column:1/-1;}
+      .budget-cat{flex-direction:column;align-items:flex-start;}
+      .budget-cat-inp-wrap{width:100%;}
+      .pcard-metrics{grid-template-columns:1fr 1fr;}
+      .pcard-metrics .pm:last-child{grid-column:1/-1;}
+      .con-ticker{font-size:44px;}
+      .freq-options{grid-template-columns:1fr 1fr;}
+      .topbar-step{display:none;}
+      .credit-txt{display:none;}
+    }
+
+    /* PRINT STYLES */
+    @media print{
+      .topbar,.progress-track,.btn,.btn-ghost,.print-btn,.pcard-toggle{display:none!important;}
+      .screen{display:block!important;}
+      #s-intro,#s-debt,#s-score,#s-budget,#s-con,#s-unlock{display:none!important;}
+      .pcard-body{display:block!important;}
+      body{background:white;}
+      .pcard,.slider-sec,.ds-mention{break-inside:avoid;}
+      .con-screen,.unlock-hero{background:var(--dark)!important;-webkit-print-color-adjust:exact;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="wm"><span class="wm-t">debt</span><span class="wm-s">/</span><span class="wm-t">self</span><span class="wm-p">planner</span></div>
+  <div class="topbar-step" id="topbar-step">Free · No account required</div>
+</div>
+<div class="progress-track"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+
+<!-- ═══════════════════════════════
+     S1 — INTRO
+═══════════════════════════════ -->
+<div id="s-intro" class="screen active">
+  <div class="wrap">
+    <div class="eyebrow">Your complete debt plan</div>
+    <div class="headline">See every path out of your debt. Ranked by what it actually costs you.</div>
+    <div class="sub">Enter your accounts and budget. Get a personalized plan in under 5 minutes. No credit check. No sign-up. No agenda — just your real numbers.</div>
+    <div class="pillars">
+      <div class="pillar"><div class="pillar-dot"></div><div class="pillar-text">Avalanche and snowball plans with your exact step-by-step payment schedule</div></div>
+      <div class="pillar"><div class="pillar-dot"></div><div class="pillar-text">Your budget determines which paths you can actually execute right now</div></div>
+      <div class="pillar"><div class="pillar-dot"></div><div class="pillar-text">Credit score and utilization unlock the consolidation loan path with real odds</div></div>
+      <div class="pillar"><div class="pillar-dot"></div><div class="pillar-text">Your debt-to-income ratio calculated automatically</div></div>
+      <div class="pillar"><div class="pillar-dot"></div><div class="pillar-text">Print your personalized plan to keep and follow</div></div>
+    </div>
+    <button class="btn" onclick="go('s-debt',1)">Build my plan →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S2 — DEBT ENTRY
+═══════════════════════════════ -->
+<div id="s-debt" class="screen">
+  <div class="wrap">
+    <div class="eyebrow m">Step 1 of 4</div>
+    <div class="debt-hdr">
+      <div class="debt-hdr-title">Enter your debts</div>
+      <div class="badge" id="debt-badge">0 accounts</div>
+    </div>
+    <div class="debt-cards" id="debt-cards"></div>
+    <button class="btn-add" onclick="addDebt()">+ Add an account</button>
+    <div id="debt-helper" style="display:none;font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;line-height:1.6;">Every account needs a balance, APR, and minimum payment before you can continue.</div>
+    <button class="btn" id="btn-debt-next" onclick="go('s-score',2)" disabled>Next: Credit score →</button>
+    <button class="btn-ghost" onclick="go('s-intro',0)">← Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S3 — CREDIT SCORE
+═══════════════════════════════ -->
+<div id="s-score" class="screen">
+  <div class="wrap">
+    <div class="eyebrow m">Step 2 of 4</div>
+    <div class="headline">What is your approximate credit score?</div>
+    <div class="sub">This helps us show you the consolidation loan path with realistic odds. Be honest — it only helps your plan.</div>
+    <div class="score-note">Not sure? Check <a href="https://www.creditkarma.com" target="_blank">Credit Karma</a> or your bank app. Both show your score for free.</div>
+    <div class="score-options">
+      <div class="score-opt" onclick="selectScore('excellent',this)">
+        <div><div class="score-opt-name">Excellent</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Best loan rates and widest options</div></div>
+        <div class="score-opt-range">750 and above</div>
+      </div>
+      <div class="score-opt" onclick="selectScore('good',this)">
+        <div><div class="score-opt-name">Good</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Qualifies for most personal loans</div></div>
+        <div class="score-opt-range">700 to 749</div>
+      </div>
+      <div class="score-opt" onclick="selectScore('fair',this)">
+        <div><div class="score-opt-name">Fair</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Limited options and higher rates</div></div>
+        <div class="score-opt-range">650 to 699</div>
+      </div>
+      <div class="score-opt" onclick="selectScore('poor',this)">
+        <div><div class="score-opt-name">Poor</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Consolidation is not a realistic option right now</div></div>
+        <div class="score-opt-range">Below 650</div>
+      </div>
+    </div>
+    <button class="btn" id="btn-score-next" onclick="go('s-budget',3)" disabled>Next: Your budget →</button>
+    <button class="btn-ghost" onclick="go('s-debt',1)">← Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S4 — BUDGET
+═══════════════════════════════ -->
+<div id="s-budget" class="screen">
+  <div class="wrap">
+    <div class="eyebrow m">Step 3 of 4</div>
+    <div class="headline">Let's build your budget.</div>
+    <div class="sub">This tells us exactly how much you have available for debt and which plans you can realistically execute right now.</div>
+
+    <!-- Paycheck frequency -->
+    <div class="budget-q">
+      <div class="budget-q-title">How often do you get paid?</div>
+      <div class="budget-q-sub">Most people think in paychecks not monthly totals. Enter whatever feels natural to you.</div>
+      <div class="freq-options">
+        <div class="freq-opt" onclick="selectFreq('weekly',this)">Every week</div>
+        <div class="freq-opt" onclick="selectFreq('biweekly',this)">Every 2 weeks</div>
+        <div class="freq-opt" onclick="selectFreq('twicemonthly',this)">Twice a month</div>
+        <div class="freq-opt" onclick="selectFreq('monthly',this)">Once a month</div>
+      </div>
+      <div class="budget-q-title" style="font-size:17px;margin-bottom:6px;" id="paycheck-q">How much is each paycheck after taxes?</div>
+      <div class="amount-inp-wrap">
+        <span class="amount-prefix">$</span>
+        <input class="amount-inp" type="number" id="paycheck-amt" placeholder="0" min="0" oninput="updatePaycheck()" />
+      </div>
+      <div class="monthly-equiv" id="monthly-equiv"></div>
+    </div>
+
+    <!-- Expense categories -->
+    <div class="budget-ack" id="budget-ack"></div>
+    <div class="budget-cats">
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Housing</div><div class="budget-cat-hint">Rent or mortgage payment only</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-housing" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Utilities</div><div class="budget-cat-hint">Electric, gas, water, internet</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-utilities" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Phone</div><div class="budget-cat-hint">Monthly cell phone bill</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-phone" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Insurance</div><div class="budget-cat-hint">Health, auto, renters or home</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-insurance" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Transportation</div><div class="budget-cat-hint">Car payment, gas, transit, parking</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-transport" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Groceries</div><div class="budget-cat-hint">Food and household essentials only</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-groceries" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Dining and entertainment</div><div class="budget-cat-hint">Restaurants, bars, streaming, events</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-dining" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+      <div class="budget-cat">
+        <div class="budget-cat-info"><div class="budget-cat-name">Everything else</div><div class="budget-cat-hint">Clothing, personal care, miscellaneous</div></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-other" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+      </div>
+    </div>
+
+    <div class="oblig-section">
+      <div class="oblig-title">Other monthly obligations</div>
+      <div class="oblig-sub">Include any fixed monthly payments a lender would count against you. Mortgage, student loans, car lease, child support, alimony. These do not affect your payoff plan but they affect your debt-to-income ratio.</div>
+      <div class="oblig-list" id="oblig-list"></div>
+      <button class="btn-add-oblig" onclick="addOblig()">+ Add an obligation</button>
+    </div>
+
+    <button class="btn" id="btn-budget-next" onclick="calculate()" disabled>Show what this debt is really costing me →</button>
+    <button class="btn-ghost" onclick="go('s-score',2)">← Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S5 — COST OF NOTHING
+═══════════════════════════════ -->
+<div id="s-con" class="screen">
+  <div class="con-screen">
+    <div class="con-eyebrow">If nothing changes</div>
+    <div class="con-lead">Paying only minimums on your current accounts, here is what you hand to lenders in interest alone.</div>
+    <div class="con-ticker" id="con-ticker">$0</div>
+    <div class="con-ticker-sub" id="con-sub">in interest over 0 years</div>
+    <div class="con-headline" id="con-headline">There is a better path. Here is your complete picture.</div>
+    <button class="btn-light" onclick="go('s-unlock',5)">See my options →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S6 — BUDGET UNLOCK
+═══════════════════════════════ -->
+<div id="s-unlock" class="screen">
+  <div class="unlock-screen">
+    <div class="unlock-hero">
+      <div class="unlock-eyebrow">Your budget breakdown</div>
+      <div class="unlock-headline" id="unlock-headline">Here is exactly where your money goes.</div>
+    </div>
+
+    <!-- Budget table -->
+    <div class="unlock-table">
+      <div class="unlock-row"><span class="unlock-row-lbl">Monthly take-home</span><span class="unlock-row-val" id="ul-income"></span></div>
+      <div class="unlock-row"><span class="unlock-row-lbl">Living expenses</span><span class="unlock-row-val" id="ul-expenses"></span></div>
+      <div class="unlock-row"><span class="unlock-row-lbl">Other obligations</span><span class="unlock-row-val" id="ul-oblig"></span></div>
+      <div class="unlock-row"><span class="unlock-row-lbl">Minimum debt payments</span><span class="unlock-row-val" id="ul-minimums"></span></div>
+      <div class="unlock-row total" id="ul-total-row"><span class="unlock-row-lbl">Available for debt payoff</span><span class="unlock-row-val" id="ul-available"></span></div>
+    </div>
+
+    <!-- DTI -->
+    <div class="dti-row" style="margin-top:16px;">
+      <div class="dti-box">
+        <div><div class="dti-lbl">Debt-to-income ratio</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Lenders prefer under 36%</div></div>
+        <div class="dti-val" id="ul-dti"></div>
+      </div>
+    </div>
+
+    <!-- Utilization cards -->
+    <div class="util-row" id="ul-util-section" style="margin-top:16px;"></div>
+
+    <!-- Verdict -->
+    <div class="unlock-verdict">
+      <div class="verdict-box" id="verdict-box">
+        <div class="verdict-title" id="verdict-title"></div>
+        <div class="verdict-text" id="verdict-text"></div>
+      </div>
+    </div>
+
+    <div style="max-width:520px;margin:0 auto;padding:0 20px 32px;">
+      <button class="btn" onclick="go('s-results',6)">See all my options →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S7 — RESULTS
+═══════════════════════════════ -->
+<div id="s-results" class="screen">
+  <div class="rec-header">
+    <div class="rec-inner">
+      <div class="eyebrow" style="margin-bottom:10px;">Your personalized recommendation</div>
+      <div class="rec-text" id="rec-text"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="util-callout-wrap"></div>
+
+    <div class="slider-sec">
+      <div class="slider-sec-title">What if you paid a little more each month?</div>
+      <div class="slider-sec-sub">Move the slider to see how extra payments change your debt free date and total interest in real time.</div>
+      <div class="slider-row">
+        <input type="range" class="main-slider" id="r-slider" min="0" max="1000" step="25" value="0" oninput="updateSlider()" />
+        <div class="slider-val" id="r-slider-val">+$0/mo</div>
+      </div>
+      <div class="slider-impact">
+        <div class="impact-box"><div class="impact-lbl">Debt free by</div><div class="impact-val" id="si-date"></div></div>
+        <div class="impact-box"><div class="impact-lbl">Interest saved</div><div class="impact-val" id="si-saved"></div></div>
+      </div>
+    </div>
+
+    <div class="paths-title">All your options, ranked by total cost</div>
+    <div class="paths-sub">Every path has real trade-offs. Here is the honest picture for your specific situation.</div>
+    <div id="path-cards"></div>
+
+    <div id="ds-wrap"></div>
+
+    <button class="print-btn" id="pdf-btn" onclick="generatePDF()">⬇ Save my plan as PDF</button>
+
+    <button class="btn-ghost" onclick="restart()">Start over with different numbers</button>
+
+    <div class="disclaimer">debtself planner is educational software. All figures are estimates based on your inputs and national averages. Results vary. We are not attorneys, financial advisors, or a debt settlement company. Nothing here constitutes legal or financial advice.</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+const S = {
+  debts: [], obligations: [], creditScore: '', paycheckFreq: '', paycheckAmt: 0,
+  monthlyIncome: 0, housing: 0, bills: 0, transport: 0, groceries: 0, dining: 0, other: 0,
+}
+let debtCtr = 0
+let obligCtr = 0
+let calcD = {}
+
+// ═══════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════
+function go(id, step) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
+  document.getElementById(id).classList.add('active')
+  window.scrollTo(0,0)
+  const pct = (step/6)*100
+  document.getElementById('prog').style.width = pct + '%'
+  const labels = ['','Step 1 of 4: Debts','Step 2 of 4: Credit','Step 3 of 4: Budget','','Step 4 of 4: Unlock','Your Plan']
+  document.getElementById('topbar-step').textContent = labels[step] || 'Free · No account required'
+}
+
+// ═══════════════════════════════════════
+//  FORMAT
+// ═══════════════════════════════════════
+function fmt(n) { if(!n||isNaN(n)) return '$0'; return '$'+Math.round(n).toLocaleString('en-US') }
+function fmtDate(m) { 
+  if(!m||m<=0||m>600) return '50+ years'
+  const d=new Date()
+  d.setMonth(d.getMonth()+Math.round(m))
+  return d.toLocaleDateString('en-US',{month:'short',year:'numeric'})
+}
+function fmtYrs(m) { if(!m) return '0 months'; const y=Math.floor(m/12),mo=Math.round(m%12); if(!y) return mo+' months'; if(!mo) return y+' years'; return y+' yrs '+mo+' mo' }
+function pct(n) { return Math.round(n)+'%' }
+
+// ═══════════════════════════════════════
+//  DEBT ENTRY
+// ═══════════════════════════════════════
+function addDebt() {
+  debtCtr++
+  const id='d'+debtCtr
+  S.debts.push({id,type:'cc',name:'',balance:'',limit:'',apr:'',minPay:'',term:''})
+  const el=document.createElement('div')
+  el.className='dcard'; el.id=id
+  el.innerHTML=`
+    <div class="dcard-hdr">
+      <div class="dcard-lbl">Account ${debtCtr}</div>
+      <button class="dcard-rm" onclick="removeDebt('${id}')">×</button>
+    </div>
+    <div class="type-toggle">
+      <button class="type-btn active" id="${id}-cc" onclick="setType('${id}','cc',this)">Credit Card</button>
+      <button class="type-btn" id="${id}-loan" onclick="setType('${id}','loan',this)">Loan</button>
+    </div>
+    <div class="fl" style="margin-bottom:8px;">
+      <div class="fl-lbl">Account name</div>
+      <input class="fl-inp" type="text" placeholder="e.g. Chase Sapphire" style="font-family:var(--sans);font-size:15px;" oninput="updD('${id}','name',this.value)" />
+    </div>
+    <div class="grid2" id="${id}-fields">
+      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="8500" min="0" oninput="updD('${id}','balance',this.value);updateUtil('${id}');checkDebtReady()" /></div>
+      <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" placeholder="10000" min="0" oninput="updD('${id}','limit',this.value);updateUtil('${id}')" /></div>
+      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value)" /></div>
+      <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value)" /></div>
+    </div>
+    <div class="util-bar-wrap" id="${id}-util">
+      <div class="util-bar-lbl"><span>Credit utilization</span><span id="${id}-upct">—</span></div>
+      <div class="util-track"><div class="util-fill" id="${id}-ufill" style="width:0%;background:var(--green)"></div></div>
+    </div>
+  `
+  document.getElementById('debt-cards').appendChild(el)
+  updateBadge(); checkDebtReady()
+}
+
+function setType(id, type, btn) {
+  const d=S.debts.find(x=>x.id===id); if(!d) return
+  d.type=type
+  document.getElementById(id+'-cc').classList.toggle('active',type==='cc')
+  document.getElementById(id+'-loan').classList.toggle('active',type==='loan')
+  const fields=document.getElementById(id+'-fields')
+  if(type==='cc') {
+    fields.innerHTML=`
+      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="8500" min="0" oninput="updD('${id}','balance',this.value);updateUtil('${id}');checkDebtReady()" /></div>
+      <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" placeholder="10000" min="0" oninput="updD('${id}','limit',this.value);updateUtil('${id}')" /></div>
+      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value)" /></div>
+      <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value)" /></div>
+    `
+    document.getElementById(id+'-util').style.display='block'
+  } else {
+    fields.innerHTML=`
+      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="12000" min="0" oninput="updD('${id}','balance',this.value);checkDebtReady()" /></div>
+      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="8.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value)" /></div>
+      <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" placeholder="350" min="0" oninput="updD('${id}','minPay',this.value)" /></div>
+      <div class="fl"><div class="fl-lbl">Months remaining</div>
+        <select class="fl-sel" oninput="updD('${id}','term',this.value)">
+          <option value="">Select</option>
+          <option value="6">6 months</option><option value="12">12 months</option>
+          <option value="18">18 months</option><option value="24">24 months</option>
+          <option value="36">36 months</option><option value="48">48 months</option>
+          <option value="60">60 months</option><option value="72">72 months</option>
+          <option value="84">84 months</option>
+        </select>
+      </div>
+    `
+    document.getElementById(id+'-util').style.display='none'
+  }
+}
+
+function updD(id,field,val) {
+  const d=S.debts.find(x=>x.id===id)
+  if(d) d[field]=val
+  checkDebtReady()
+}
+
+function updateUtil(id) {
+  const d=S.debts.find(x=>x.id===id); if(!d||d.type!=='cc') return
+  const bal=Number(d.balance), lim=Number(d.limit)
+  const wrap=document.getElementById(id+'-util')
+  if(!lim||!bal) { wrap.style.display='none'; return }
+  wrap.style.display='block'
+  const u=Math.min((bal/lim)*100,100)
+  const fill=document.getElementById(id+'-ufill')
+  const upct=document.getElementById(id+'-upct')
+  fill.style.width=u+'%'
+  fill.style.background=u<=30?'var(--green)':u<=50?'#F59E0B':'var(--red)'
+  upct.textContent=Math.round(u)+'%'
+  upct.style.color=u<=30?'var(--green)':u<=50?'var(--amber)':'var(--red)'
+}
+
+function removeDebt(id) {
+  S.debts=S.debts.filter(x=>x.id!==id)
+  const el=document.getElementById(id); if(el) el.remove()
+  updateBadge(); checkDebtReady()
+}
+
+function updateBadge() {
+  const n=S.debts.length
+  document.getElementById('debt-badge').textContent=n+(n===1?' account':' accounts')
+}
+
+function checkDebtReady() {
+  const hasDebt = S.debts.some(d => Number(d.balance) > 0)
+  if (!hasDebt) { document.getElementById('btn-debt-next').disabled = true; return }
+
+  let allComplete = true
+
+  S.debts.filter(d => Number(d.balance) > 0).forEach(d => {
+    const card = document.getElementById(d.id)
+    if (!card) return
+
+    // Check APR
+    const aprInputs = card.querySelectorAll('input[placeholder="22.99"], input[placeholder="8.99"]')
+    const aprVal = Number(d.apr)
+    aprInputs.forEach(inp => {
+      let hint = inp.parentElement.querySelector('.field-hint')
+      if (!aprVal) {
+        inp.style.borderColor = 'var(--red)'
+        if (!hint) {
+          hint = document.createElement('div')
+          hint.className = 'field-hint'
+          hint.style.cssText = 'font-size:10px;color:var(--red);margin-top:3px;font-family:var(--mono);'
+          inp.parentElement.appendChild(hint)
+        }
+        hint.textContent = 'APR required'
+        allComplete = false
+      } else {
+        inp.style.borderColor = ''
+        if (hint) hint.remove()
+      }
+    })
+
+    // Check minimum payment
+    const minInputs = card.querySelectorAll('input[placeholder="auto"], input[placeholder="350"]')
+    const minVal = Number(d.minPay)
+    minInputs.forEach(inp => {
+      let hint = inp.parentElement.querySelector('.field-hint')
+      if (!minVal) {
+        inp.style.borderColor = 'var(--red)'
+        if (!hint) {
+          hint = document.createElement('div')
+          hint.className = 'field-hint'
+          hint.style.cssText = 'font-size:10px;color:var(--red);margin-top:3px;font-family:var(--mono);'
+          inp.parentElement.appendChild(hint)
+        }
+        hint.textContent = 'Minimum payment required'
+        allComplete = false
+      } else {
+        inp.style.borderColor = ''
+        if (hint) hint.remove()
+      }
+    })
+  })
+
+  document.getElementById('btn-debt-next').disabled = !allComplete
+  const helper = document.getElementById('debt-helper')
+  if (helper) helper.style.display = allComplete ? 'none' : 'block'
+}
+
+// ═══════════════════════════════════════
+//  CREDIT SCORE
+// ═══════════════════════════════════════
+function selectScore(val,el) {
+  S.creditScore=val
+  document.querySelectorAll('.score-opt').forEach(x=>x.classList.remove('sel'))
+  el.classList.add('sel')
+  document.getElementById('btn-score-next').disabled=false
+}
+
+// ═══════════════════════════════════════
+//  BUDGET
+// ═══════════════════════════════════════
+const FREQ_MULT={'weekly':4.33,'biweekly':2.167,'twicemonthly':2,'monthly':1}
+const FREQ_LABEL={'weekly':'per week','biweekly':'every 2 weeks','twicemonthly':'twice a month','monthly':'per month'}
+
+function selectFreq(val,el) {
+  S.paycheckFreq=val
+  document.querySelectorAll('.freq-opt').forEach(x=>x.classList.remove('sel'))
+  el.classList.add('sel')
+  document.getElementById('paycheck-q').textContent='How much is each paycheck after taxes?'
+  updatePaycheck(); checkBudgetReady()
+}
+
+function updatePaycheck() {
+  const amt=Number(document.getElementById('paycheck-amt').value)
+  S.paycheckAmt=amt
+  if(amt>0 && S.paycheckFreq) {
+    const mo=Math.round(amt*FREQ_MULT[S.paycheckFreq])
+    S.monthlyIncome=mo
+    document.getElementById('monthly-equiv').textContent='= '+fmt(mo)+' per month'
+    document.getElementById('budget-ack').textContent='Great. With '+fmt(mo)+' coming in each month, let us look at your expenses.'
+  } else {
+    document.getElementById('monthly-equiv').textContent=''
+    document.getElementById('budget-ack').textContent=''
+  }
+  checkBudgetReady()
+}
+
+function checkBudgetReady() {
+  const ok=S.monthlyIncome>0 && S.paycheckFreq
+  document.getElementById('btn-budget-next').disabled=!ok
+}
+
+// ═══════════════════════════════════════
+//  OTHER OBLIGATIONS
+// ═══════════════════════════════════════
+function addOblig() {
+  obligCtr++
+  const id='ob'+obligCtr
+  S.obligations.push({id,name:'',amount:0})
+  const row=document.createElement('div')
+  row.className='oblig-row'; row.id=id
+  row.innerHTML=`
+    <input class="oblig-name" type="text" placeholder="e.g. Student loan, mortgage" oninput="updOblig('${id}','name',this.value)" />
+    <div class="oblig-amount-wrap">
+      <span class="oblig-prefix">$</span>
+      <input class="oblig-amount" type="number" placeholder="0" min="0" oninput="updOblig('${id}','amount',this.value)" />
+    </div>
+    <button class="oblig-rm" onclick="removeOblig('${id}')">×</button>
+  `
+  document.getElementById('oblig-list').appendChild(row)
+}
+
+function updOblig(id,field,val) {
+  const o=S.obligations.find(x=>x.id===id)
+  if(o) o[field]=field==='amount'?Number(val)||0:val
+}
+
+function removeOblig(id) {
+  S.obligations=S.obligations.filter(x=>x.id!==id)
+  const el=document.getElementById(id); if(el) el.remove()
+}
+
+// ═══════════════════════════════════════
+//  CALCULATIONS
+// ═══════════════════════════════════════
+function getMin(bal,apr) { return Math.max(bal*0.02,25) }
+
+function runAvalanche(debts, extra) {
+  let dw=debts.map(d=>({...d,balance:Number(d.balance),apr:Number(d.apr)||22.99,minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
+  dw.sort((a,b)=>b.apr-a.apr)
+  // Ensure each minimum payment exceeds monthly interest to prevent infinite loop
+  dw=dw.map(d=>{const r=d.apr/100/12;const minInt=d.balance*r;return {...d,minPay:Math.max(d.minPay,minInt+1)}})
+  let totalInt=0,months=0,balances=dw.map(d=>d.balance),payments=dw.map(d=>d.minPay),paid=new Array(dw.length).fill(false)
+  while(balances.some(b=>b>0)&&months<600) {
+    months++
+    const ti=dw.findIndex((_,i)=>!paid[i]&&balances[i]>0)
+    for(let i=0;i<dw.length;i++) {
+      if(paid[i]||balances[i]<=0) continue
+      const r=dw[i].apr/100/12,int=balances[i]*r
+      totalInt+=int; balances[i]+=int
+      const pay=Math.min(payments[i]+(i===ti?extra:0),balances[i])
+      balances[i]-=pay
+      if(balances[i]<0.01){balances[i]=0;if(!paid[i]){paid[i]=true;const ni=dw.findIndex((_,j)=>!paid[j]&&balances[j]>0);if(ni>=0)payments[ni]+=payments[i];payments[i]=0}}
+    }
+  }
+  return {months,totalInterest:Math.round(totalInt)}
+}
+
+function runSnowball(debts, extra) {
+  let dw=debts.map(d=>({...d,balance:Number(d.balance),apr:Number(d.apr)||22.99,minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
+  dw.sort((a,b)=>a.balance-b.balance)
+  // Ensure each minimum payment exceeds monthly interest to prevent infinite loop
+  dw=dw.map(d=>{const r=d.apr/100/12;const minInt=d.balance*r;return {...d,minPay:Math.max(d.minPay,minInt+1)}})
+  let totalInt=0,months=0,balances=dw.map(d=>d.balance),payments=dw.map(d=>d.minPay),paid=new Array(dw.length).fill(false)
+  while(balances.some(b=>b>0)&&months<600) {
+    months++
+    const ti=dw.findIndex((_,i)=>!paid[i]&&balances[i]>0)
+    for(let i=0;i<dw.length;i++) {
+      if(paid[i]||balances[i]<=0) continue
+      const r=dw[i].apr/100/12,int=balances[i]*r
+      totalInt+=int; balances[i]+=int
+      const pay=Math.min(payments[i]+(i===ti?extra:0),balances[i])
+      balances[i]-=pay
+      if(balances[i]<0.01){balances[i]=0;if(!paid[i]){paid[i]=true;const ni=dw.findIndex((_,j)=>!paid[j]&&balances[j]>0);if(ni>=0)payments[ni]+=payments[i];payments[i]=0}}
+    }
+  }
+  return {months,totalInterest:Math.round(totalInt)}
+}
+
+function runMinimums(debts) {
+  let total=0,maxM=0
+  debts.filter(d=>Number(d.balance)>0).forEach(d=>{
+    const bal=Number(d.balance),r=(Number(d.apr)||22.99)/100/12
+    const monthlyInterest=bal*r
+    // Ensure minimum payment always exceeds monthly interest to prevent infinite loop
+    const mp=Math.max(Number(d.minPay)||getMin(bal,Number(d.apr)),monthlyInterest+1)
+    let b=bal,int=0,m=0
+    while(b>0&&m<600){const i=b*r;int+=i;b=b+i-mp;m++;if(b<0)b=0}
+    total+=int;if(m>maxM)maxM=m
+  })
+  return {months:maxM,totalInterest:Math.round(total)}
+}
+
+function getConsolidationOdds(score, utilization) {
+  if(score==='excellent'&&utilization<=30) return {level:'strong',label:'Strong candidate',rate:'8 to 13% APR likely',text:'Your credit profile puts you in a strong position for a personal consolidation loan. With your current high-interest accounts, a consolidation loan at 8 to 13% APR would likely save you significant interest. Worth applying. Check your bank or credit union first, then online lenders like SoFi or LightStream.'}
+  if(score==='excellent'&&utilization<=50) return {level:'moderate',label:'Moderate candidate',rate:'12 to 18% APR likely',text:'Your score is strong but higher utilization raises lender caution. You can likely qualify but may receive a higher rate than expected. Run the math carefully. Consolidation only helps if the loan rate is meaningfully below your current weighted average APR.'}
+  if(score==='excellent') return {level:'lower',label:'Worth exploring',rate:'Rates will vary',text:'High utilization is reducing your effective creditworthiness despite a strong score. Paying down one or two cards to under 30% utilization could improve your odds significantly before applying. Consider that step first.'}
+  if(score==='good'&&utilization<=30) return {level:'moderate',label:'Moderate candidate',rate:'13 to 20% APR likely',text:'A good score with healthy utilization puts you in range for a consolidation loan. Approval depends on your income and total debt to income ratio. Shop around since rates will vary between lenders more at this tier.'}
+  if(score==='good'&&utilization<=50) return {level:'lower',label:'Lower odds but worth checking',rate:'Higher rates expected',text:'Consolidation is possible but lenders will look closely at your utilization. If your DTI is under 36% you may still qualify. Reducing utilization on one card first will improve your application.'}
+  if(score==='good') return {level:'lower',label:'Improve your profile first',rate:'High rates or denial likely',text:'High utilization at your score level makes consolidation difficult at a rate that would actually help. Focus on reducing your highest utilization cards first. Even getting one card under 30% improves your odds meaningfully.'}
+  if(score==='fair'&&utilization<=30) return {level:'lower',label:'Limited options available',rate:'18 to 28% APR if approved',text:'Fair credit with controlled utilization gives you a slim window for consolidation but rates may not be meaningfully better than your current cards. Credit unions are your best bet at this tier since they tend to be more flexible than banks or online lenders.'}
+  if(score==='fair') return {level:'not-rec',label:'Not recommended right now',rate:'Unlikely to help',text:'Consolidation at fair credit with high utilization is unlikely to produce a rate that actually saves you money. Focus on the payoff methods first and use any extra cash to reduce your highest utilization card. Revisit consolidation in 6 to 12 months.'}
+  return {level:'not-rec',label:'Not available at this time',rate:'',text:'Consolidation loans are generally not available at favorable rates with a poor credit score. Focus on the payoff or settlement paths. As your score improves which happens as you pay down balances, consolidation becomes an option worth revisiting.'}
+}
+
+// ═══════════════════════════════════════
+//  GENERATE PAYMENT PLAN
+// ═══════════════════════════════════════
+function generatePlan(debts, extra, method) {
+  let dw=debts.map(d=>({name:d.name||'Account',balance:Number(d.balance),apr:Number(d.apr)||22.99,minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
+  if(!dw.length) return [{type:'done',month:0}]
+  // Protect against infinite loop
+  dw=dw.map(d=>{const r=d.apr/100/12;return {...d,minPay:Math.max(d.minPay,d.balance*r+1)}})
+  method==='avalanche'?dw.sort((a,b)=>b.apr-a.apr):dw.sort((a,b)=>a.balance-b.balance)
+  let balances=dw.map(d=>d.balance),payments=dw.map(d=>d.minPay),paid=new Array(dw.length).fill(false),months=0
+  const steps=[]
+  const extraAmt=extra>0?`Put an extra ${fmt(extra)}/mo toward ${dw[0].name} on top of its minimum.`:`Focus any extra money toward ${dw[0].name} first.`
+  steps.push({type:'start',detail:`Pay the minimum on every account each month. ${extraAmt}`,target:dw[0].name,targetPay:payments[0]+(extra>0?extra:0),hasExtra:extra>0})
+  while(balances.some(b=>b>0)&&months<600){
+    months++
+    const ti=dw.findIndex((_,i)=>!paid[i]&&balances[i]>0)
+    for(let i=0;i<dw.length;i++){
+      if(paid[i]||balances[i]<=0) continue
+      const r=dw[i].apr/100/12
+      balances[i]=balances[i]*(1+r)
+      const pay=Math.min(payments[i]+(i===ti?extra:0),balances[i])
+      balances[i]-=pay
+      if(balances[i]<0.01&&!paid[i]){
+        balances[i]=0;paid[i]=true
+        const ni=dw.findIndex((_,j)=>!paid[j]&&balances[j]>0)
+        const freed=payments[i];payments[i]=0
+        if(ni>=0)payments[ni]+=freed
+        steps.push({type:'payoff',month:months,name:dw[i].name,origBal:Number(debts.find(x=>(x.name||'Account')===dw[i].name)?.balance||0),freed,nextName:ni>=0?dw[ni].name:null,newPay:ni>=0?payments[ni]:0})
+      }
+    }
+  }
+  steps.push({type:'done',month:months})
+  return steps
+}
+
+function renderPlan(steps) {
+  return steps.map(s=>{
+    if(s.type==='start') {
+      const payLine=s.hasExtra?`<div class="ps-amount">${fmt(s.targetPay)}/mo toward ${s.target} (minimum + extra)</div>`:`<div class="ps-amount">${fmt(s.targetPay)}/mo minimum toward ${s.target}</div>`
+      return `<div class="plan-step"><div class="ps-left"><div class="ps-month">Month 1</div></div><div class="ps-right"><div class="ps-account">Start your plan</div><div class="ps-detail">${s.detail}</div>${payLine}</div></div>`
+    }
+    if(s.type==='payoff') {
+      return `<div class="plan-step"><div class="ps-left"><div class="ps-month">Month ${s.month}</div></div><div class="ps-right"><div class="ps-account">${s.name}</div><div class="ps-detail">Original balance ${fmt(s.origBal)}</div><div class="ps-paid">PAID OFF</div>${s.nextName?`<div class="ps-rollover">Roll your freed ${fmt(s.freed)}/mo onto <strong>${s.nextName}</strong>. Your new payment on that account becomes ${fmt(s.newPay)}/mo.</div>`:''}</div></div>`
+    }
+    return `<div class="plan-step"><div class="ps-left"><div class="ps-month">Month ${s.month}</div></div><div class="ps-right"><div class="ps-account" style="color:var(--green)">Debt free</div><div class="ps-detail">Every account paid off. That monthly payment is now yours.</div></div></div>`
+  }).join('')
+}
+
+// ═══════════════════════════════════════
+//  CALCULATE
+// ═══════════════════════════════════════
+function calculate() {
+  const valid=S.debts.filter(d=>Number(d.balance)>0)
+  if(!valid.length) return
+  S.housing=Number(document.getElementById('b-housing').value)||0
+  S.bills=(Number(document.getElementById('b-utilities').value)||0)+(Number(document.getElementById('b-phone').value)||0)+(Number(document.getElementById('b-insurance').value)||0)
+  S.transport=Number(document.getElementById('b-transport').value)||0
+  S.groceries=Number(document.getElementById('b-groceries').value)||0
+  S.dining=Number(document.getElementById('b-dining').value)||0
+  S.other=Number(document.getElementById('b-other').value)||0
+
+  const totalDebt=valid.reduce((s,d)=>s+Number(d.balance),0)
+  const totalMin=valid.reduce((s,d)=>s+(Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))),0)
+  const totalOblig=S.obligations.reduce((s,o)=>s+(Number(o.amount)||0),0)
+  const totalExp=S.housing+S.bills+S.transport+S.groceries+(S.dining||0)+S.other
+  const available=S.monthlyIncome-totalExp-totalOblig-totalMin
+  const dti=S.monthlyIncome>0?Math.round(((totalMin+totalOblig)/S.monthlyIncome)*100):0
+
+  // Utilization
+  const ccDebts=valid.filter(d=>d.type==='cc'||!d.type)
+  const totalBal=ccDebts.reduce((s,d)=>s+Number(d.balance),0)
+  const totalLim=ccDebts.reduce((s,d)=>s+Number(d.limit),0)
+  const totalUtil=totalLim>0?Math.round((totalBal/totalLim)*100):0
+
+  const highestApr=valid.sort((a,b)=>(Number(b.apr)||22.99)-(Number(a.apr)||22.99))[0]
+  const coFee=Math.round(totalDebt*0.25)
+  const youKeep=coFee-249
+
+  const minimums=runMinimums(valid)
+  const avalanche=runAvalanche(valid,0)
+  const snowball=runSnowball(valid,0)
+
+  calcD={valid,totalDebt,totalMin,totalOblig,totalExp,available,dti,totalUtil,ccDebts,highestApr,coFee,youKeep,minimums,avalanche,snowball}
+
+  // Cost of nothing animation
+  animateTicker(minimums.totalInterest)
+  document.getElementById('con-sub').textContent='in interest over '+fmtYrs(minimums.months)
+  go('s-con',4)
+  setTimeout(()=>buildUnlock(),100)
+  setTimeout(()=>buildResults(),200)
+}
+
+function animateTicker(target) {
+  const el=document.getElementById('con-ticker')
+  const dur=2000,steps=60,inc=target/steps
+  let cur=0,s=0
+  el.style.color='#F59E0B'
+  const t=setInterval(()=>{
+    cur+=inc;s++
+    el.textContent=fmt(Math.round(cur))
+    const pct=s/steps
+    if(pct>0.7) el.style.color='#EF4444'
+    if(s>=steps){clearInterval(t);el.textContent=fmt(target);el.style.color='#EF4444'}
+  },dur/steps)
+}
+
+// ═══════════════════════════════════════
+//  BUILD UNLOCK SCREEN
+// ═══════════════════════════════════════
+function buildUnlock() {
+  const {available,dti,totalUtil,ccDebts,totalMin,totalExp,totalOblig} = calcD
+  document.getElementById('ul-income').textContent=fmt(S.monthlyIncome)
+  document.getElementById('ul-expenses').textContent=fmt(totalExp)
+  document.getElementById('ul-oblig').textContent=totalOblig>0?fmt(totalOblig):'$0'
+  document.getElementById('ul-minimums').textContent=fmt(totalMin)
+  document.getElementById('ul-available').textContent=fmt(Math.abs(available))+(available<0?' deficit':'')
+
+  const totalRow=document.getElementById('ul-total-row')
+  totalRow.classList.toggle('neg',available<0)
+
+  // DTI
+  const dtiEl=document.getElementById('ul-dti')
+  dtiEl.textContent=dti+'%'
+  dtiEl.style.color=dti<=36?'var(--green)':dti<=50?'var(--amber)':'var(--red)'
+
+  // Per-card utilization
+  const utilSec=document.getElementById('ul-util-section')
+  const cards=ccDebts.filter(d=>Number(d.limit)>0&&Number(d.balance)>0)
+  if(cards.length) {
+    utilSec.innerHTML=cards.map(d=>{
+      const u=Math.min(Math.round((Number(d.balance)/Number(d.limit))*100),100)
+      const col=u<=30?'var(--green)':u<=50?'#F59E0B':'var(--red)'
+      const tip=u>30?`Paying ${fmt(Number(d.balance)-Number(d.limit)*0.3)} would bring this under 30% and improve your credit score.`:``
+      return `<div class="util-card"><div class="util-card-hdr"><div class="util-card-name">${d.name||'Credit card'}</div><div class="util-card-pct" style="color:${col}">${u}% utilized</div></div><div class="util-track2"><div class="util-fill2" style="width:${u}%;background:${col}"></div></div>${tip?`<div class="util-tip">${tip}</div>`:''}</div>`
+    }).join('')
+  } else utilSec.innerHTML=''
+
+  // Unlock headline
+  let headline='Here is exactly where your money goes.'
+  if(available>500) headline='You have real room to accelerate your payoff. Here is how.'
+  else if(available>0) headline='You have some breathing room. Here is what that unlocks.'
+  else if(available===0) headline='Your income and expenses are balanced. Here is the honest picture.'
+  else headline='Your expenses are outpacing your income. Here is what needs to change.'
+  document.getElementById('unlock-headline').textContent=headline
+
+  // Verdict
+  const vb=document.getElementById('verdict-box')
+  const vt=document.getElementById('verdict-title')
+  const vtx=document.getElementById('verdict-text')
+  if(available>=500){vb.className='verdict-box positive';vt.textContent='Avalanche or snowball is fully executable';vtx.textContent='You have '+fmt(available)+' available above your minimum payments each month. You can fully execute either payoff method right now. The avalanche plan with extra payments will get you out the fastest.'}
+  else if(available>0){vb.className='verdict-box positive';vt.textContent='Payoff is executable at a reduced pace';vtx.textContent='You have '+fmt(available)+' left after expenses and minimums. Not a lot of room to accelerate but the payoff methods are still executable. Even '+fmt(Math.min(available,100))+' per month extra makes a meaningful difference over time.'}
+  else if(available>-200){vb.className='verdict-box warning';vt.textContent='Very tight. Settlement is worth understanding.';vtx.textContent='After expenses and minimum payments your budget is nearly balanced or in slight deficit. This is the situation where understanding debt settlement as an alternative is worth your time. It reduces the principal you owe not just the interest rate.'}
+  else{vb.className='verdict-box negative';vt.textContent='Your expenses are outpacing your income right now.';vtx.textContent='Your current expenses exceed your income by '+fmt(Math.abs(available))+' per month. Minimum payments alone are not sustainable. Settlement or consolidation needs to be part of your plan. Review your expense categories for any immediate reductions.'}
+}
+
+// ═══════════════════════════════════════
+//  BUILD RESULTS
+// ═══════════════════════════════════════
+function buildResults() {
+  const {valid,totalDebt,coFee,youKeep,minimums,avalanche,snowball,highestApr,available,totalUtil} = calcD
+  const extra=Math.max(0,Math.floor(available/25)*25)
+  const avaE=runAvalanche(valid,extra)
+  const intSavedAva=minimums.totalInterest-avalanche.totalInterest
+  const intSavedSnow=minimums.totalInterest-snowball.totalInterest
+  const avaBetter=avalanche.totalInterest<=snowball.totalInterest
+
+  // Recommendation
+  const aprName=highestApr.name||'your highest-rate account'
+  const aprVal=(Number(highestApr.apr)||22.99).toFixed(2)
+  let rec
+  if(S.creditScore==='excellent'||S.creditScore==='good') {
+    if(totalUtil>30) rec=`Your ${aprName} at ${aprVal}% APR is your most expensive debt. Paying it down first with the avalanche method saves ${fmt(intSavedAva)} in interest versus minimums only. Your utilization at ${totalUtil}% is also reducing your credit score. Paying down your highest-utilization card to under 30% could improve your score enough to qualify for a consolidation loan at a better rate.`
+    else rec=`Your ${aprName} at ${aprVal}% APR is costing you the most right now. The avalanche method saves ${fmt(intSavedAva)} in interest versus paying only minimums and moves your debt free date ${fmtYrs(minimums.months-avalanche.months)} closer. With your credit profile you may also qualify for a consolidation loan worth checking before committing to a payoff plan.`
+  } else if(available<0) {
+    rec=`Your budget is currently in deficit which means minimum payments alone are not sustainable long term. Understanding debt settlement as an option is worth your time. It reduces what you owe not just the interest rate. In the meantime the avalanche method on any accounts you can keep current saves ${fmt(intSavedAva)} compared to minimums.`
+  } else {
+    rec=`Your ${aprName} at ${aprVal}% APR is your priority. The avalanche method pays that account first and saves ${fmt(intSavedAva)} in interest versus minimums. It gets you debt free ${fmtYrs(minimums.months-avalanche.months)} sooner. Based on your budget you have approximately ${fmt(Math.max(0,available))} available above minimums each month.`
+  }
+  document.getElementById('rec-text').textContent=rec
+
+  // Utilization callout
+  const utilCallWrap=document.getElementById('util-callout-wrap')
+  const highUtil=calcD.ccDebts.find(d=>Number(d.limit)>0&&(Number(d.balance)/Number(d.limit))>0.3)
+  if(highUtil) {
+    const u=Math.round((Number(highUtil.balance)/Number(highUtil.limit))*100)
+    const payTo30=Math.round(Number(highUtil.balance)-Number(highUtil.limit)*0.3)
+    utilCallWrap.innerHTML=`<div class="util-callout"><div class="util-callout-title">Credit score opportunity — ${highUtil.name||'Credit card'} at ${u}% utilization</div><div class="util-callout-text">Paying ${fmt(payTo30)} to bring this card under 30% utilization could improve your credit score within 30 to 60 days. A higher score improves your consolidation loan odds and interest rate.</div></div>`
+  } else utilCallWrap.innerHTML=''
+
+  // Slider
+  document.getElementById('r-slider').value=extra
+  document.getElementById('r-slider-val').textContent='+'+fmt(extra)+'/mo'
+  updateSliderDisplay(avaE,minimums)
+
+  // Payment plans
+  const avaPlan=generatePlan(valid,extra,'avalanche')
+  const snowPlan=generatePlan(valid,extra,'snowball')
+
+  // Consolidation odds
+  const odds=getConsolidationOdds(S.creditScore,totalUtil)
+  const showSettlement=S.creditScore!=='excellent'||available<200
+
+  // Path cards
+  const showConsol=S.creditScore!=='poor'
+  document.getElementById('path-cards').innerHTML=`
+    ${pCard({name:'Avalanche method',desc:'Pay the highest interest rate account first. Mathematically the cheapest path. Best if you can stay motivated even when the first payoff takes a while.',badge:avaBetter?'SAVES MOST':'MATHEMATICALLY OPTIMAL',badgeCls:avaBetter?'bg-green':'bg-gray',best:avaBetter,metrics:[{l:'Debt free by',v:fmtDate(avalanche.months),c:'g'},{l:'Total interest',v:fmt(avalanche.totalInterest),c:''},{l:'Interest saved',v:fmt(intSavedAva),c:'g'}],creditPct:100,creditCol:'var(--green)',creditTxt:'No impact',planId:'ava',planHTML:renderPlan(avaPlan)})}
+    ${pCard({name:'Snowball method',desc:'Pay the smallest balance first. You may pay more in interest overall but getting that first account to zero creates real momentum. Best if you need early wins to stay on track.',badge:!avaBetter?'SAVES MOST':'BEST FOR MOTIVATION',badgeCls:!avaBetter?'bg-green':'bg-gray',best:!avaBetter,metrics:[{l:'Debt free by',v:fmtDate(snowball.months),c:'g'},{l:'Total interest',v:fmt(snowball.totalInterest),c:''},{l:'Interest saved',v:fmt(intSavedSnow),c:'g'}],creditPct:100,creditCol:'var(--green)',creditTxt:'No impact',planId:'snow',planHTML:renderPlan(snowPlan)})}
+    ${showConsol?pCard({name:'Consolidation loan',desc:'Combine high-rate accounts into one lower-rate personal loan. Simplifies your payments into one monthly bill and may reduce your total interest significantly.',badge:odds.label.toUpperCase(),badgeCls:odds.level==='strong'?'bg-green':odds.level==='moderate'?'bg-blue':odds.level==='lower'?'bg-amber':'bg-gray',best:false,metrics:[{l:'Est. rate',v:odds.rate,c:'b'},{l:'Your DTI',v:calcD.dti+'%',c:calcD.dti<=36?'g':'r'},{l:'Utilization',v:totalUtil+'%',c:totalUtil<=30?'g':totalUtil<=50?'a':'r'}],creditPct:80,creditCol:'#3B82F6',creditTxt:'Slight inquiry impact only',consolidation:odds,planId:null,planHTML:null}):''}
+    ${pCard({name:'Minimum payments only',desc:'Stay current on all accounts without any extra effort. Your credit stays intact but this is the most expensive path. You pay the most in interest and it takes the longest.',badge:'COSTS MOST',badgeCls:'bg-amber',best:false,metrics:[{l:'Debt free by',v:fmtDate(minimums.months),c:'a'},{l:'Total interest',v:fmt(minimums.totalInterest),c:'r'},{l:'Extra vs avalanche',v:fmt(minimums.totalInterest-avalanche.totalInterest),c:'r'}],creditPct:100,creditCol:'var(--green)',creditTxt:'No impact',planId:null,planHTML:null})}
+    ${showSettlement?pCard({name:'Debt settlement',desc:'Negotiate directly with creditors to accept less than the full balance. Reduces the principal you owe not just the interest. Your credit is affected temporarily during the process.',badge:'REDUCES PRINCIPAL',badgeCls:'bg-red',best:false,metrics:[{l:'Est. settlement',v:fmt(totalDebt*0.5)+' avg',c:''},{l:'Settlement co. fee',v:fmt(coFee),c:'r'},{l:'Timeline',v:'12 to 48 months',c:''}],creditPct:20,creditCol:'#F59E0B',creditTxt:'Temporary impact',planId:null,planHTML:null}):''}
+  `
+
+  const showDs=showSettlement
+  const coFeeStr=fmt(coFee)
+  const youKeepStr=fmt(youKeep)
+
+  // PostHog — fire planner_completed
+  try {
+    if(window.posthog) {
+      window.posthog.capture('planner_completed', {
+        debt_amount: totalDebt,
+        recommended_method: avaBetter ? 'avalanche' : 'snowball',
+        months_to_debt_free: avaBetter ? avalanche.months : snowball.months,
+        interest_saved: avaBetter ? intSavedAva : intSavedSnow,
+        settlement_relevant: showDs,
+        total_util: totalUtil,
+        credit_score: S.creditScore,
+      })
+    }
+  } catch(e) {}
+
+  document.getElementById('ds-wrap').innerHTML = showDs ? `
+    <div class="ds-block">
+      <div class="ds-block-eyebrow">If debt settlement is the right path for you</div>
+      <div class="ds-block-headline">Settlement companies charge ${coFeeStr} to manage your balance.</div>
+      <div class="ds-block-sub">debtself gives you the exact same process — word-for-word scripts, creditor intelligence, and a full settlement platform — for $249 flat. Worth knowing before you sign with anyone.</div>
+      <div class="ds-block-keep">Est. fees you avoid: <span class="ds-block-keep-num">${fmt(coFee - 249)}</span></div>
+      <a class="ds-block-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you'd keep →</a>
+    </div>
+    <div class="email-capture" id="email-capture-wrap">
+      <div class="email-capture-label">Send me a copy of my plan</div>
+      <div class="email-capture-sub">Optional. We will follow up if you have questions.</div>
+      <div class="email-capture-row">
+        <input class="email-capture-input" id="planner-email" type="email" placeholder="your@email.com" autocomplete="email" onblur="submitPlannerEmail()" onkeydown="if(event.key==='Enter')submitPlannerEmail()" />
+        <button class="email-capture-btn" onclick="submitPlannerEmail()">Send</button>
+      </div>
+      <div class="email-capture-status" id="email-capture-status"></div>
+    </div>
+  ` : `
+    <div class="email-capture" id="email-capture-wrap">
+      <div class="email-capture-label">Send me a copy of my plan</div>
+      <div class="email-capture-sub">Optional. We will follow up if you have questions.</div>
+      <div class="email-capture-row">
+        <input class="email-capture-input" id="planner-email" type="email" placeholder="your@email.com" autocomplete="email" onblur="submitPlannerEmail()" onkeydown="if(event.key==='Enter')submitPlannerEmail()" />
+        <button class="email-capture-btn" onclick="submitPlannerEmail()">Send</button>
+      </div>
+      <div class="email-capture-status" id="email-capture-status"></div>
+    </div>
+  `
+
+  // Store calcD snapshot for email capture
+  window._plannerSnapshot = {
+    totalDebt,
+    recommendedMethod: avaBetter ? 'Avalanche method' : 'Snowball method',
+    debtFreeDate: fmtDate(avaBetter ? avalanche.months : snowball.months),
+    interestSaved: avaBetter ? intSavedAva : intSavedSnow,
+    settlementRelevant: showDs,
+  }
+}
+
+function pCard({name,desc,badge,badgeCls,best,metrics,creditPct,creditCol,creditTxt,planId,planHTML,consolidation}) {
+  const mHTML=metrics.map(m=>`<div class="pm"><div class="pm-lbl">${m.l}</div><div class="pm-val ${m.c}">${m.v}</div></div>`).join('')
+  const planSection=planId?`<button class="pcard-toggle" id="tog-${planId}" onclick="togglePlan('${planId}')"><span class="toggle-arrow" id="arr-${planId}">▼</span> <span id="tog-lbl-${planId}">Show my step-by-step payment plan</span></button><div class="pcard-body" id="body-${planId}"><div class="plan-eyebrow">Your step-by-step payment schedule</div><div class="plan-steps">${planHTML}</div></div>`:''
+  const consSection=consolidation?`<div class="pcard-body open" style="padding-top:14px;"><div class="odds-box ${consolidation.level}"><div class="odds-title">${consolidation.label}: ${consolidation.rate}</div><div class="odds-text">${consolidation.text}</div></div></div>`:''
+  return `<div class="pcard ${best?'best':''}"><div class="pcard-head"><div class="pcard-head-row"><div><div class="pcard-name">${name}</div><div class="pcard-desc">${desc}</div></div><div class="pcard-badge ${badgeCls}">${badge}</div></div></div><div class="pcard-metrics">${mHTML}</div><div class="pcard-credit"><div class="credit-lbl">Credit impact</div><div class="credit-track"><div class="credit-fill" style="width:${creditPct}%;background:${creditCol}"></div></div><div class="credit-txt">${creditTxt}</div></div>${planSection}${consSection}</div>`
+}
+
+function togglePlan(id) {
+  const body=document.getElementById('body-'+id)
+  const arr=document.getElementById('arr-'+id)
+  const lbl=document.getElementById('tog-lbl-'+id)
+  const open=body.classList.toggle('open')
+  arr.classList.toggle('open',open)
+  lbl.textContent=open?'Hide payment plan':'Show my step-by-step payment plan'
+}
+
+// ═══════════════════════════════════════
+//  LIVE SLIDER
+// ═══════════════════════════════════════
+function updateSlider() {
+  const extra=Number(document.getElementById('r-slider').value)
+  document.getElementById('r-slider-val').textContent='+'+fmt(extra)+'/mo'
+  const {valid,minimums,totalUtil,coFee,youKeep,totalDebt} = calcD
+  const ava=runAvalanche(valid,extra)
+  const snow=runSnowball(valid,extra)
+  const avaBetter=ava.totalInterest<=snow.totalInterest
+  const intSavedAva=minimums.totalInterest-ava.totalInterest
+  const intSavedSnow=minimums.totalInterest-snow.totalInterest
+
+  // Update impact boxes
+  updateSliderDisplay(ava,minimums)
+
+  // Rebuild avalanche card metrics and plan
+  const avaPlan=generatePlan(valid,extra,'avalanche')
+  const snowPlan=generatePlan(valid,extra,'snowball')
+
+  // Update avalanche metrics
+  const avaMetrics=document.querySelector('#path-cards .pcard:nth-child(1) .pcard-metrics')
+  if(avaMetrics) avaMetrics.innerHTML=`
+    <div class="pm"><div class="pm-lbl">Debt free by</div><div class="pm-val g">${fmtDate(ava.months)}</div></div>
+    <div class="pm"><div class="pm-lbl">Total interest</div><div class="pm-val">${fmt(ava.totalInterest)}</div></div>
+    <div class="pm"><div class="pm-lbl">Interest saved</div><div class="pm-val g">${fmt(intSavedAva)}</div></div>
+  `
+
+  // Update snowball metrics
+  const snowMetrics=document.querySelector('#path-cards .pcard:nth-child(2) .pcard-metrics')
+  if(snowMetrics) snowMetrics.innerHTML=`
+    <div class="pm"><div class="pm-lbl">Debt free by</div><div class="pm-val g">${fmtDate(snow.months)}</div></div>
+    <div class="pm"><div class="pm-lbl">Total interest</div><div class="pm-val">${fmt(snow.totalInterest)}</div></div>
+    <div class="pm"><div class="pm-lbl">Interest saved</div><div class="pm-val g">${fmt(intSavedSnow)}</div></div>
+  `
+
+  // Update payment plan bodies if open
+  const avaBody=document.getElementById('body-ava')
+  if(avaBody) avaBody.innerHTML=`<div class="plan-eyebrow">Your step-by-step payment schedule</div><div class="plan-steps">${renderPlan(avaPlan)}</div>`
+
+  const snowBody=document.getElementById('body-snow')
+  if(snowBody) snowBody.innerHTML=`<div class="plan-eyebrow">Your step-by-step payment schedule</div><div class="plan-steps">${renderPlan(snowPlan)}</div>`
+}
+
+function updateSliderDisplay(ava,min) {
+  document.getElementById('si-date').textContent=fmtDate(ava.months)
+  document.getElementById('si-saved').textContent=fmt(min.totalInterest-ava.totalInterest)
+}
+
+// ═══════════════════════════════════════
+//  PDF GENERATION
+// ═══════════════════════════════════════
+function generatePDF() {
+  const btn = document.getElementById('pdf-btn')
+  btn.textContent = 'Generating your plan...'
+  btn.disabled = true
+
+  loadJsPDF(() => {
+  setTimeout(() => {
+    try {
+      const { jsPDF } = window.jspdf
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+      const pw = 215.9, ph = 279.4
+      const ml = 18, mr = 18, mt = 16
+      const cw = pw - ml - mr
+      let y = mt
+
+      const RED = [255, 77, 46]
+      const DARK = [10, 14, 18]
+      const MID = [107, 114, 128]
+      const LIGHT = [232, 228, 220]
+      const BG = [247, 245, 240]
+      const GREEN = [255, 77, 46]
+      const WHITE = [255, 255, 255]
+
+      const { valid, totalDebt, totalMin, totalOblig, totalExp, available, dti, totalUtil, ccDebts, coFee, minimums, avalanche, snowball, highestApr } = calcD
+      const avaBetter = avalanche.totalInterest <= snowball.totalInterest
+      const extra = Math.max(0, Math.floor(available / 25) * 25)
+      const avaFull = runAvalanche(valid, extra)
+      const snowFull = runSnowball(valid, extra)
+      const intSavedAva = minimums.totalInterest - avaFull.totalInterest
+      const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
+
+      function newPage() {
+        doc.addPage()
+        y = mt
+        // Footer on each page
+        doc.setFontSize(7).setTextColor(...MID)
+        doc.text('debtself planner  |  debtself.com  |  Educational software. Results are estimates. Not financial or legal advice.', pw / 2, ph - 8, { align: 'center' })
+      }
+
+      function checkY(needed) {
+        if (y + needed > ph - 16) newPage()
+      }
+
+      function sectionHeader(title) {
+        checkY(10)
+        doc.setFillColor(...BG)
+        doc.rect(ml, y, cw, 7, 'F')
+        doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'bold')
+        doc.text(title.toUpperCase(), ml + 3, y + 4.5)
+        y += 10
+      }
+
+      function row(label, value, bold, valueColor) {
+        checkY(7)
+        doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', bold ? 'bold' : 'normal')
+        doc.text(label, ml, y)
+        doc.setTextColor(...(valueColor || DARK))
+        doc.text(value, pw - mr, y, { align: 'right' })
+        doc.setDrawColor(...LIGHT)
+        doc.line(ml, y + 1.5, pw - mr, y + 1.5)
+        y += 7
+      }
+
+      // ── PAGE 1: HEADER ──
+      doc.setFillColor(...DARK)
+      doc.rect(0, 0, pw, 28, 'F')
+      doc.setFontSize(18).setTextColor(...WHITE).setFont('helvetica', 'bold')
+      doc.text('debt', ml, 17)
+      const dw = doc.getTextWidth('debt')
+      doc.setTextColor(...RED)
+      doc.text('/', ml + dw, 17)
+      const sw = doc.getTextWidth('/')
+      doc.setTextColor(...WHITE)
+      doc.text('self', ml + dw + sw, 17)
+      doc.setFontSize(10).setTextColor(200, 198, 195).setFont('helvetica', 'normal')
+      doc.text('planner', ml + dw + sw + doc.getTextWidth('self') + 3, 17)
+      doc.setFontSize(8).setTextColor(150, 148, 145)
+      doc.text('Your personalized debt freedom plan', pw - mr, 12, { align: 'right' })
+      doc.text('Generated ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), pw - mr, 20, { align: 'right' })
+      y = 36
+
+      // ── RECOMMENDATION BOX ──
+      const recText = document.getElementById('rec-text').textContent
+      doc.setFillColor(...BG)
+      doc.roundedRect(ml, y, cw, 2, 2, 2, 'F')
+      doc.setFontSize(8).setTextColor(...RED).setFont('helvetica', 'bold')
+      doc.text('YOUR PERSONALIZED RECOMMENDATION', ml + 3, y + 5)
+      y += 8
+      doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', 'normal')
+      const recLines = doc.splitTextToSize(recText, cw - 6)
+      doc.setFillColor(...BG)
+      doc.rect(ml, y, cw, recLines.length * 5 + 6, 'F')
+      doc.setDrawColor(...RED)
+      doc.line(ml, y, ml, y + recLines.length * 5 + 6)
+      doc.text(recLines, ml + 4, y + 5)
+      y += recLines.length * 5 + 12
+
+      // ── DEBT SUMMARY ──
+      sectionHeader('Your Accounts')
+      valid.forEach(d => {
+        checkY(7)
+        const util = d.type === 'cc' && Number(d.limit) > 0
+          ? ' (' + Math.round((Number(d.balance) / Number(d.limit)) * 100) + '% util)'
+          : ''
+        doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', 'normal')
+        doc.text((d.name || 'Account') + util, ml, y)
+        doc.text(fmt(Number(d.balance)), ml + 90, y, { align: 'right' })
+        doc.setTextColor(...MID)
+        doc.text((Number(d.apr) || 22.99).toFixed(2) + '% APR', ml + 120, y, { align: 'right' })
+        doc.text('Min ' + fmt(Number(d.minPay)), pw - mr, y, { align: 'right' })
+        doc.setDrawColor(...LIGHT)
+        doc.line(ml, y + 1.5, pw - mr, y + 1.5)
+        y += 7
+      })
+      checkY(8)
+      doc.setFontSize(10).setTextColor(...DARK).setFont('helvetica', 'bold')
+      doc.text('Total debt', ml, y)
+      doc.setTextColor(...RED)
+      doc.text(fmt(totalDebt), pw - mr, y, { align: 'right' })
+      y += 12
+
+      // ── BUDGET SUMMARY ──
+      sectionHeader('Your Budget Breakdown')
+      row('Monthly take-home', fmt(S.monthlyIncome))
+      row('Living expenses', fmt(totalExp))
+      if (totalOblig > 0) row('Other obligations', fmt(totalOblig))
+      row('Minimum debt payments', fmt(totalMin))
+      row('Available for debt payoff', fmt(Math.abs(available)) + (available < 0 ? ' deficit' : ''), true, RED)
+      checkY(8)
+      doc.setFontSize(9).setTextColor(...MID).setFont('helvetica', 'normal')
+      doc.text('Debt-to-income ratio: ' + dti + '%  |  Total utilization: ' + totalUtil + '%', ml, y)
+      y += 12
+
+      // ── PATH COMPARISON ──
+      sectionHeader('All Your Options Compared')
+
+      function pathRow(name, debtFreeBy, totalInterest, interestSaved, note, savedColor) {
+        checkY(20)
+        doc.setFillColor(...WHITE)
+        doc.setDrawColor(...LIGHT)
+        doc.roundedRect(ml, y, cw, 18, 2, 2, 'FD')
+        doc.setFontSize(10).setTextColor(...DARK).setFont('helvetica', 'bold')
+        doc.text(name, ml + 3, y + 6)
+        doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'normal')
+        doc.text(note, ml + 3, y + 11)
+        doc.setFontSize(8).setTextColor(...MID)
+        doc.text('Debt free by', ml + 3, y + 16)
+        doc.text('Total interest', ml + 65, y + 16)
+        doc.text('Interest saved', ml + 120, y + 16)
+        doc.setFontSize(9).setFont('helvetica', 'bold').setTextColor(...DARK)
+        doc.text(debtFreeBy, ml + 3, y + 21)
+        doc.text(totalInterest, ml + 65, y + 21)
+        doc.setTextColor(...(savedColor || RED))
+        doc.text(interestSaved, ml + 120, y + 21)
+        y += 22
+      }
+
+      pathRow(
+        'Avalanche method ' + (avaBetter ? '(RECOMMENDED)' : ''),
+        fmtDate(avaFull.months),
+        fmt(avaFull.totalInterest),
+        fmt(intSavedAva),
+        'Pay highest APR first. Mathematically cheapest. Best if you can stay motivated for the long haul.'
+      )
+      pathRow(
+        'Snowball method ' + (!avaBetter ? '(RECOMMENDED)' : ''),
+        fmtDate(snowFull.months),
+        fmt(snowFull.totalInterest),
+        fmt(intSavedSnow),
+        'Pay smallest balance first. May cost more in interest but builds momentum with early wins.'
+      )
+      pathRow(
+        'Minimum payments only',
+        fmtDate(minimums.months),
+        fmt(minimums.totalInterest),
+        '--',
+        'Stay current with no extra effort. The most expensive path over time.',
+        MID
+      )
+
+      // ── PAGE 2: PAYMENT PLAN ──
+      newPage()
+      doc.setFillColor(...DARK)
+      doc.rect(0, 0, pw, 20, 'F')
+      doc.setFontSize(13).setTextColor(...WHITE).setFont('helvetica', 'bold')
+      doc.text((avaBetter ? 'Avalanche' : 'Snowball') + ' Method: Your Step-by-Step Payment Plan', ml, 13)
+      y = 28
+
+      // Extra payment note
+      if (extra > 0) {
+        doc.setFontSize(9).setTextColor(...DARK).setFont('helvetica', 'normal')
+        doc.setFillColor(...BG)
+        doc.rect(ml, y, cw, 8, 'F')
+        doc.text('This plan includes ' + fmt(extra) + '/mo extra payment above minimums based on your available budget.', ml + 3, y + 5)
+        y += 12
+      }
+
+      // Column headers
+      doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'bold')
+      doc.text('CHECK', ml, y)
+      doc.text('MONTH', ml + 14, y)
+      doc.text('ACCOUNT', ml + 34, y)
+      doc.text('ACTION', ml + 100, y)
+      doc.text('PAYMENT', pw - mr, y, { align: 'right' })
+      doc.setDrawColor(...RED)
+      doc.line(ml, y + 2, pw - mr, y + 2)
+      y += 7
+
+      // Generate the plan
+      const plan = generatePlan(valid, extra, avaBetter ? 'avalanche' : 'snowball')
+      plan.forEach((step, idx) => {
+        checkY(10)
+
+        if (step.type === 'start') {
+          // Checkbox
+          doc.setDrawColor(...LIGHT)
+          doc.rect(ml, y - 3.5, 4, 4)
+          doc.setFontSize(8).setTextColor(...DARK).setFont('helvetica', 'normal')
+          doc.text('Month 1', ml + 14, y)
+          doc.setFont('helvetica', 'bold')
+          doc.text('Start your plan', ml + 34, y)
+          doc.setFont('helvetica', 'normal').setTextColor(...MID)
+          doc.text('Pay minimums on all accounts', ml + 100, y)
+          doc.setTextColor(...RED)
+          doc.text(fmt(step.targetPay) + '/mo', pw - mr, y, { align: 'right' })
+        } else if (step.type === 'payoff') {
+          doc.setDrawColor(...LIGHT)
+          doc.rect(ml, y - 3.5, 4, 4)
+          doc.setFontSize(8).setTextColor(...DARK).setFont('helvetica', 'normal')
+          doc.text('Month ' + step.month, ml + 14, y)
+          doc.setFont('helvetica', 'bold')
+          doc.text(step.name, ml + 34, y)
+          // PAID OFF label: draw as small caps text on same row, after account name — no overlapping badge
+          const nameW = doc.getTextWidth(step.name)
+          doc.setFontSize(6.5).setTextColor(...RED).setFont('helvetica', 'bold')
+          doc.text('PAID OFF', ml + 34 + nameW + 3, y)
+          if (step.nextName) {
+            doc.setFontSize(7.5).setTextColor(...MID).setFont('helvetica', 'normal')
+            doc.text('Roll ' + fmt(step.freed) + '/mo onto ' + step.nextName, ml + 100, y)
+            doc.setTextColor(...RED)
+            doc.text(fmt(step.newPay) + '/mo', pw - mr, y, { align: 'right' })
+          }
+        } else if (step.type === 'done') {
+          checkY(12)
+          doc.setFillColor(...GREEN)
+          doc.rect(ml, y, cw, 10, 'F')
+          doc.setFontSize(10).setTextColor(...WHITE).setFont('helvetica', 'bold')
+          doc.text('Month ' + step.month + ': DEBT FREE', ml + 3, y + 6.5)
+          doc.setFontSize(8).setFont('helvetica', 'normal')
+          doc.text('Every account paid off. That monthly payment is now yours.', pw - mr, y + 6.5, { align: 'right' })
+          y += 14
+          return
+        }
+
+        doc.setDrawColor(...LIGHT)
+        doc.line(ml, y + 2, pw - mr, y + 2)
+        y += 8
+      })
+
+      // ── MONTHLY CHECKLIST ──
+      checkY(20)
+      y += 4
+      doc.setFontSize(11).setTextColor(...DARK).setFont('helvetica', 'bold')
+      doc.text('Monthly Checklist', ml, y)
+      y += 8
+      doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'normal')
+      doc.text('Check off each month as you make your payments. Write your actual balance to track progress.', ml, y)
+      y += 8
+
+      // Checklist header
+      doc.setFontSize(8).setTextColor(...MID).setFont('helvetica', 'bold')
+      doc.text('DONE', ml, y)
+      doc.text('MONTH', ml + 12, y)
+      doc.text('FOCUS ACCOUNT', ml + 40, y)
+      doc.text('TARGET PAYMENT', ml + 110, y)
+      doc.text('ACTUAL BALANCE', pw - mr, y, { align: 'right' })
+      doc.setDrawColor(...RED)
+      doc.line(ml, y + 2, pw - mr, y + 2)
+      y += 7
+
+      // Generate month by month checklist from plan
+      let currentAccount = valid[0]?.name || 'Account'
+      let currentPayment = (Number(valid[0]?.minPay) || 0) + extra
+      let checkMonth = 1
+
+      plan.forEach(step => {
+        if (step.type === 'done') return
+        const endMonth = step.type === 'payoff' ? step.month : (plan.find(s => s.type === 'payoff')?.month || minimums.months)
+
+        while (checkMonth <= Math.min(endMonth, checkMonth + (step.type === 'payoff' ? 0 : 5))) {
+          checkY(8)
+          doc.setDrawColor(...LIGHT)
+          doc.rect(ml, y - 3.5, 4, 4)
+          doc.setFontSize(8).setTextColor(...DARK).setFont('helvetica', 'normal')
+          doc.text('Month ' + checkMonth, ml + 12, y)
+          doc.text(currentAccount, ml + 40, y)
+          doc.setTextColor(...RED)
+          doc.text(fmt(currentPayment) + '/mo', ml + 110, y)
+          doc.setTextColor(...LIGHT)
+          doc.text('$___________', pw - mr, y, { align: 'right' })
+          doc.setDrawColor(...LIGHT)
+          doc.line(ml, y + 2, pw - mr, y + 2)
+          y += 7
+          checkMonth++
+          if (step.type !== 'payoff') break
+        }
+
+        if (step.type === 'payoff' && step.nextName) {
+          currentAccount = step.nextName
+          currentPayment = step.newPay
+        }
+      })
+
+      // ── DEBTSELF MENTION ──
+      if (calcD.coFee > 0) {
+        checkY(20)
+        y += 4
+        doc.setFillColor(...DARK)
+        doc.roundedRect(ml, y, cw, 22, 2, 2, 'F')
+        doc.setFontSize(7).setTextColor(150, 148, 145).setFont('helvetica', 'normal')
+        doc.text('IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU', ml + 3, y + 5)
+        doc.setFontSize(9).setTextColor(...WHITE).setFont('helvetica', 'bold')
+        doc.text('Settlement companies charge ' + fmt(coFee) + ' to manage this process on your balance.', ml + 3, y + 11)
+        doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(200, 198, 195)
+        doc.text('debtself.com gives you the exact same process for $249 flat. Worth knowing before you sign with anyone.', ml + 3, y + 17)
+        y += 26
+      }
+
+      // Footer on first page
+      doc.setPage(1)
+      doc.setFontSize(7).setTextColor(...MID).setFont('helvetica', 'normal')
+      doc.text('debtself planner  |  debtself.com  |  Educational software. Results are estimates. Not financial or legal advice.', pw / 2, ph - 8, { align: 'center' })
+
+      doc.save('debtself-plan-' + new Date().toISOString().split('T')[0] + '.pdf')
+
+    } catch (err) {
+      console.error('PDF generation error:', err)
+      alert('There was an issue generating your PDF. Please try again.')
+    } finally {
+      const btn = document.getElementById('pdf-btn')
+      btn.textContent = '⬇ Save my plan as PDF'
+      btn.disabled = false
+    }
+  }, 100)
+  }) // end loadJsPDF
+}
+// ═══════════════════════════════════════
+//  PLANNER EMAIL CAPTURE
+// ═══════════════════════════════════════
+let _emailSubmitted = false
+async function submitPlannerEmail() {
+  if (_emailSubmitted) return
+  const input = document.getElementById('planner-email')
+  const status = document.getElementById('email-capture-status')
+  if (!input) return
+  const email = input.value.trim()
+  if (!email || !email.includes('@')) return
+
+  _emailSubmitted = true
+  input.disabled = true
+  const btn = input.nextElementSibling
+  if (btn) btn.disabled = true
+  if (status) status.textContent = 'Sending...'
+
+  try {
+    const snap = window._plannerSnapshot || {}
+    await fetch('/.netlify/functions/planner-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        debt_amount: snap.totalDebt || null,
+        assessment: {
+          recommendedMethod: snap.recommendedMethod,
+          debtFreeDate: snap.debtFreeDate,
+          interestSaved: snap.interestSaved,
+          settlementRelevant: snap.settlementRelevant,
+        }
+      })
+    })
+    if (status) {
+      status.textContent = 'Sent. Check your inbox.'
+      status.style.color = '#FF4D2E'
+    }
+    // PostHog
+    try { if(window.posthog) window.posthog.capture('planner_email_captured', { email }) } catch(e) {}
+  } catch(err) {
+    _emailSubmitted = false
+    if (input) input.disabled = false
+    if (btn) btn.disabled = false
+    if (status) status.textContent = 'Something went wrong. Try again.'
+  }
+}
+
+function trackPlannerCTA(e) {
+  try {
+    if (window.posthog) {
+      const snap = window._plannerSnapshot || {}
+      const distinctId = window.posthog.get_distinct_id ? window.posthog.get_distinct_id() : null
+      window.posthog.capture('cta_clicked', {
+        cta_label: 'planner_see_how_much',
+        debt_amount: snap.totalDebt,
+        settlement_relevant: snap.settlementRelevant,
+      })
+      // Append ph_distinct_id for cross-domain stitching
+      if (distinctId) {
+        e.preventDefault()
+        const url = new URL(e.currentTarget.href)
+        url.searchParams.set('ph_distinct_id', distinctId)
+        url.searchParams.set('utm_source', 'planner')
+        url.searchParams.set('utm_medium', 'cta')
+        window.location.href = url.toString()
+      }
+    }
+  } catch(err) {}
+}
+
+// ═══════════════════════════════════════
+function saveProgress() {
+  try {
+    const data = {
+      debts: S.debts,
+      obligations: S.obligations,
+      creditScore: S.creditScore,
+      paycheckFreq: S.paycheckFreq,
+      paycheckAmt: S.paycheckAmt,
+      monthlyIncome: S.monthlyIncome,
+      housing: Number(document.getElementById('b-housing').value)||0,
+      utilities: Number(document.getElementById('b-utilities').value)||0,
+      phone: Number(document.getElementById('b-phone').value)||0,
+      insurance: Number(document.getElementById('b-insurance').value)||0,
+      transport: Number(document.getElementById('b-transport').value)||0,
+      groceries: Number(document.getElementById('b-groceries').value)||0,
+      dining: Number(document.getElementById('b-dining').value)||0,
+      other: Number(document.getElementById('b-other').value)||0,
+      savedAt: new Date().toISOString()
+    }
+    localStorage.setItem('debtself_planner', JSON.stringify(data))
+  } catch(e) {}
+}
+
+function checkForSavedProgress() {
+  try {
+    const raw = localStorage.getItem('debtself_planner')
+    if (!raw) return
+    const data = JSON.parse(raw)
+    const savedAt = new Date(data.savedAt)
+    if (Date.now() - savedAt.getTime() > 30 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('debtself_planner'); return
+    }
+    if (!data.debts || !data.debts.length) return
+    // Show resume banner
+    const banner = document.createElement('div')
+    banner.id = 'resume-banner'
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:var(--dark);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:200;border-top:2px solid var(--red);'
+    banner.innerHTML = `
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#FAF8F3;margin-bottom:2px;">You have a saved plan</div>
+        <div style="font-size:11px;color:rgba(250,248,243,0.5);">Saved ${savedAt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="dismissResume()" style="background:none;border:1px solid rgba(250,248,243,0.2);border-radius:7px;padding:8px 14px;font-size:12px;color:rgba(250,248,243,0.6);font-family:var(--sans);cursor:pointer;">Start fresh</button>
+        <button onclick="resumeProgress()" style="background:var(--red);border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;color:white;font-family:var(--sans);cursor:pointer;">Resume where I left off →</button>
+      </div>
+    `
+    document.body.appendChild(banner)
+  } catch(e) {}
+}
+
+function resumeProgress() {
+  try {
+    const raw = localStorage.getItem('debtself_planner')
+    if (!raw) return
+    const data = JSON.parse(raw)
+    dismissResume()
+
+    // Restore debts
+    if (data.debts && data.debts.length) {
+      data.debts.forEach(d => {
+        debtCtr++
+        S.debts.push(d)
+        const isLoan = d.type === 'loan'
+        const el = document.createElement('div')
+        el.className = 'dcard'; el.id = d.id
+        el.innerHTML = `
+          <div class="dcard-hdr">
+            <div class="dcard-lbl">Account ${debtCtr}</div>
+            <button class="dcard-rm" onclick="removeDebt('${d.id}')">×</button>
+          </div>
+          <div class="type-toggle">
+            <button class="type-btn ${!isLoan?'active':''}" id="${d.id}-cc" onclick="setType('${d.id}','cc',this)">Credit Card</button>
+            <button class="type-btn ${isLoan?'active':''}" id="${d.id}-loan" onclick="setType('${d.id}','loan',this)">Loan</button>
+          </div>
+          <div class="fl" style="margin-bottom:8px;">
+            <div class="fl-lbl">Account name</div>
+            <input class="fl-inp" type="text" value="${d.name||''}" style="font-family:var(--sans);font-size:15px;" oninput="updD('${d.id}','name',this.value)" />
+          </div>
+          <div class="grid2" id="${d.id}-fields">
+            ${isLoan ? `
+              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);checkDebtReady()" /></div>
+              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value)" /></div>
+              <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value)" /></div>
+              <div class="fl"><div class="fl-lbl">Months remaining</div>
+                <select class="fl-sel" oninput="updD('${d.id}','term',this.value)">
+                  <option value="">Select</option>
+                  ${[6,12,18,24,36,48,60,72,84].map(m=>`<option value="${m}" ${d.term==m?'selected':''}>${m} months</option>`).join('')}
+                </select>
+              </div>
+            ` : `
+              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);updateUtil('${d.id}');checkDebtReady()" /></div>
+              <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" value="${d.limit||''}" min="0" oninput="updD('${d.id}','limit',this.value);updateUtil('${d.id}')" /></div>
+              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value)" /></div>
+              <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value)" /></div>
+            `}
+          </div>
+          <div class="util-bar-wrap" id="${d.id}-util" style="display:${!isLoan&&Number(d.limit)>0&&Number(d.balance)>0?'block':'none'}">
+            <div class="util-bar-lbl"><span>Credit utilization</span><span id="${d.id}-upct"></span></div>
+            <div class="util-track"><div class="util-fill" id="${d.id}-ufill" style="width:0%;background:var(--green)"></div></div>
+          </div>
+        `
+        document.getElementById('debt-cards').appendChild(el)
+        if (!isLoan) updateUtil(d.id)
+      })
+      updateBadge(); checkDebtReady()
+    }
+
+    // Restore obligations
+    if (data.obligations && data.obligations.length) {
+      data.obligations.forEach(o => {
+        obligCtr++
+        S.obligations.push(o)
+        const row = document.createElement('div')
+        row.className = 'oblig-row'; row.id = o.id
+        row.innerHTML = `
+          <input class="oblig-name" type="text" value="${o.name||''}" placeholder="e.g. Student loan, mortgage" oninput="updOblig('${o.id}','name',this.value)" />
+          <div class="oblig-amount-wrap">
+            <span class="oblig-prefix">$</span>
+            <input class="oblig-amount" type="number" value="${o.amount||''}" placeholder="0" min="0" oninput="updOblig('${o.id}','amount',this.value)" />
+          </div>
+          <button class="oblig-rm" onclick="removeOblig('${o.id}')">×</button>
+        `
+        document.getElementById('oblig-list').appendChild(row)
+      })
+    }
+
+    // Restore credit score
+    if (data.creditScore) {
+      S.creditScore = data.creditScore
+      document.querySelectorAll('.score-opt').forEach(el => {
+        if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(`'${data.creditScore}'`)) {
+          el.classList.add('sel')
+          document.getElementById('btn-score-next').disabled = false
+        }
+      })
+    }
+
+    // Restore paycheck
+    if (data.paycheckFreq) {
+      S.paycheckFreq = data.paycheckFreq
+      S.paycheckAmt = data.paycheckAmt
+      S.monthlyIncome = data.monthlyIncome
+      document.querySelectorAll('.freq-opt').forEach(el => {
+        if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(`'${data.paycheckFreq}'`)) el.classList.add('sel')
+      })
+      const paEl = document.getElementById('paycheck-amt')
+      if (paEl) paEl.value = data.paycheckAmt || ''
+      if (data.monthlyIncome) {
+        document.getElementById('monthly-equiv').textContent = '= $' + Math.round(data.monthlyIncome).toLocaleString() + ' per month'
+        document.getElementById('budget-ack').textContent = 'Great. With $' + Math.round(data.monthlyIncome).toLocaleString() + ' coming in each month, let us look at your expenses.'
+      }
+      checkBudgetReady()
+    }
+
+    // Restore budget fields
+    const fields = ['housing','utilities','phone','insurance','transport','groceries','dining','other']
+    fields.forEach(f => {
+      const el = document.getElementById('b-' + f)
+      if (el && data[f]) el.value = data[f]
+    })
+
+    go('s-debt', 1)
+  } catch(e) { console.error('Resume error:', e) }
+}
+
+function dismissResume() {
+  const banner = document.getElementById('resume-banner')
+  if (banner) banner.remove()
+}
+
+// Auto-save on any input
+document.addEventListener('input', saveProgress)
+document.addEventListener('change', saveProgress)
+
+// Check for saved progress on load
+window.addEventListener('load', checkForSavedProgress)
+
+// ═══════════════════════════════════════
+//  RESTART
+// ═══════════════════════════════════════
+function restart() {
+  try { localStorage.removeItem('debtself_planner') } catch(e) {}
+  S.debts=[];S.obligations=[];S.creditScore='';S.paycheckFreq='';S.paycheckAmt=0;S.monthlyIncome=0
+  debtCtr=0;obligCtr=0;calcD={}
+  document.getElementById('debt-cards').innerHTML=''
+  document.getElementById('oblig-list').innerHTML=''
+  document.getElementById('debt-badge').textContent='0 accounts'
+  document.getElementById('btn-debt-next').disabled=true
+  document.getElementById('btn-score-next').disabled=true
+  document.querySelectorAll('.score-opt').forEach(x=>x.classList.remove('sel'))
+  document.querySelectorAll('.freq-opt').forEach(x=>x.classList.remove('sel'))
+  document.getElementById('paycheck-amt').value=''
+  document.getElementById('monthly-equiv').textContent=''
+  document.getElementById('budget-ack').textContent=''
+  document.getElementById('btn-budget-next').disabled=true
+  ;['b-housing','b-utilities','b-phone','b-insurance','b-transport','b-groceries','b-dining','b-other'].forEach(id=>{document.getElementById(id).value=''})
+  go('s-intro',0)
+}
+</script>
+</body>
+</html>

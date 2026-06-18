@@ -1,0 +1,17 @@
+[build]
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Redirect /planner to the gate screen
+[[redirects]]
+  from = "/planner"
+  to = "/planner/index.html"
+  status = 200
+
+# Redirect /planner/tool to the tool screen (auth checked in JS)
+[[redirects]]
+  from = "/planner/tool"
+  to = "/planner/tool/index.html"
+  status = 200

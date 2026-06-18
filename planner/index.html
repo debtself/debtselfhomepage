@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>debtself planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red: #FF4D2E;
+      --dark: #0A0E12;
+      --bg: #F7F5F0;
+      --white: #FFFFFF;
+      --muted: #6B7280;
+      --border: #E8E4DC;
+      --red-soft: rgba(255,77,46,0.08);
+      --sans: 'Familjen Grotesk', sans-serif;
+      --serif: 'Instrument Serif', serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: var(--sans);
+      color: var(--dark);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      background: var(--dark);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+    }
+    .wm { display: flex; align-items: baseline; gap: 0; }
+    .wm-b { font-size: 17px; font-weight: 700; color: #FAF8F3; }
+    .wm-s { font-size: 17px; font-weight: 700; color: var(--red); }
+    .wm-p { font-family: var(--serif); font-style: italic; font-size: 15px; color: rgba(250,248,243,0.45); margin-left: 7px; font-weight: 400; }
+
+    /* MAIN */
+    .main {
+      min-height: calc(100vh - 52px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 440px;
+    }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--red);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .headline {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 26px;
+      color: var(--dark);
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .sub {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .field-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .code-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 18px;
+      font-family: var(--mono);
+      font-weight: 600;
+      color: var(--dark);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      margin-bottom: 12px;
+    }
+    .code-input:focus { border-color: var(--red); background: var(--white); }
+    .code-input.error { border-color: #EF4444; }
+    .error-msg {
+      font-size: 13px;
+      color: #EF4444;
+      margin-bottom: 14px;
+      min-height: 18px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+    .btn {
+      width: 100%;
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--sans);
+      cursor: pointer;
+      transition: opacity 0.15s;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { opacity: 0.8; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .help {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+    .help a { color: var(--red); text-decoration: none; }
+
+    @media (max-width: 480px) {
+      .card { padding: 32px 24px; border-radius: 16px; }
+      .headline { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wm">
+    <span class="wm-b">debt</span><span class="wm-s">/</span><span class="wm-b">self</span>
+    <span class="wm-p">planner</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <div class="eyebrow">Access required</div>
+    <div class="headline">Enter your access code to open your planner.</div>
+    <div class="sub">Your code is in your Etsy order confirmation email.</div>
+
+    <div class="field-label">Access code</div>
+    <input
+      class="code-input"
+      id="code-input"
+      type="text"
+      placeholder="DS-XXXX-XXXX"
+      maxlength="12"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="characters"
+      spellcheck="false"
+      oninput="formatCode(this)"
+      onkeydown="if(event.key==='Enter')unlock()"
+    />
+    <div class="error-msg" id="error-msg"></div>
+    <button class="btn" id="unlock-btn" onclick="unlock()">Unlock my planner →</button>
+
+    <div class="help">
+      Can't find your code? <a href="mailto:support@debtself.com">support@debtself.com</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SESSION_KEY = 'planner_session'
+  const TOOL_URL = '/planner/tool/'
+
+  // On load — check if already unlocked
+  ;(function() {
+    try {
+      const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
+      if (session && session.token) {
+        window.location.replace(TOOL_URL)
+      }
+    } catch(e) {}
+  })()
+
+  function formatCode(input) {
+    // Strip everything except alphanumeric, uppercase
+    let raw = input.value.replace(/[^A-Z0-9]/gi, '').toUpperCase()
+    // Insert dashes at positions 2 and 6 (DS-XXXX-XXXX)
+    let formatted = ''
+    if (raw.length > 0) formatted += raw.slice(0, 2)
+    if (raw.length > 2) formatted += '-' + raw.slice(2, 6)
+    if (raw.length > 6) formatted += '-' + raw.slice(6, 10)
+    input.value = formatted
+    // Clear error on edit
+    showError('')
+    input.classList.remove('error')
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg')
+    if (msg) {
+      el.textContent = msg
+      el.classList.add('show')
+      document.getElementById('code-input').classList.add('error')
+    } else {
+      el.classList.remove('show')
+    }
+  }
+
+  async function unlock() {
+    const input = document.getElementById('code-input')
+    const btn = document.getElementById('unlock-btn')
+    const code = input.value.trim().toUpperCase()
+
+    if (!code) {
+      showError('Please enter your access code.')
+      input.focus()
+      return
+    }
+
+    if (!/^DS-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) {
+      showError('That doesn\'t look right. Codes are formatted DS-XXXX-XXXX.')
+      input.classList.add('error')
+      return
+    }
+
+    btn.textContent = 'Checking...'
+    btn.disabled = true
+    showError('')
+
+    try {
+      const res = await fetch('/.netlify/functions/validate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+
+      const data = await res.json()
+
+      if (data.valid && data.session_token) {
+        // Store session
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          token: data.session_token,
+          unlockedAt: new Date().toISOString(),
+          code,
+        }))
+        window.location.replace(TOOL_URL)
+      } else {
+        showError(data.error || 'Code not recognized. Check your Etsy order confirmation.')
+        btn.textContent = 'Unlock my planner →'
+        btn.disabled = false
+        input.focus()
+      }
+    } catch(err) {
+      showError('Something went wrong. Please try again.')
+      btn.textContent = 'Unlock my planner →'
+      btn.disabled = false
+    }
+  }
+</script>
+</body>
+</html>
