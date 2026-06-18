@@ -60,13 +60,10 @@ function buildEmail(email, debt_amount, assessment) {
       <body style="margin:0;padding:0;background:#F7F5F0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         <div style="max-width:520px;margin:0 auto;padding:32px 16px;">
 
-          <!-- Wordmark -->
-          <div style="margin-bottom:32px;">
-            <span style="font-size:20px;font-weight:700;color:#0A0E12;">debt</span><span style="font-size:20px;font-weight:700;color:#FF4D2E;">/</span><span style="font-size:20px;font-weight:700;color:#0A0E12;">self</span>
-            <span style="font-size:16px;color:rgba(10,14,18,0.4);margin-left:6px;">planner</span>
-          </div>
-
           <div style="background:#FFFFFF;border-radius:16px;padding:32px;border:1px solid #E8E4DC;">
+          <div style="background:#0A0E12;padding:16px 24px;border-radius:10px 10px 0 0;margin:-32px -32px 24px -32px;">
+  <span style="font-size:18px;font-weight:700;color:#FAF8F3;font-family:Helvetica,Arial,sans-serif;">debt</span><span style="font-size:18px;font-weight:700;color:#FF4D2E;font-family:Helvetica,Arial,sans-serif;">/</span><span style="font-size:18px;font-weight:700;color:#FAF8F3;font-family:Helvetica,Arial,sans-serif;">self</span><span style="font-size:15px;color:rgba(250,248,243,0.45);font-family:Georgia,'Times New Roman',serif;font-style:italic;margin-left:7px;">planner</span>
+</div>
             <div style="font-size:11px;font-weight:700;color:#FF4D2E;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:12px;">Your plan</div>
             <div style="font-size:22px;font-weight:700;color:#0A0E12;margin-bottom:8px;">Here's a copy of your debt freedom plan.</div>
             <div style="font-size:14px;color:#6B7280;line-height:1.6;margin-bottom:4px;">Go back to your plan anytime at debtself.com/planner.</div>
