@@ -716,6 +716,8 @@ const S = {
 let debtCtr = 0
 let obligCtr = 0
 let calcD = {}
+let _selectedMethod = null
+let _compareData = []
 
 // ═══════════════════════════════════════
 //  NAVIGATION
@@ -1272,21 +1274,22 @@ function buildResults() {
 
   // ── PLAN CARDS ──
   const method = avaBetter ? 'avalanche' : 'snowball'
+  _selectedMethod = method
   document.getElementById('plan-method-label').textContent = 'Recommended method: ' + (avaBetter ? 'Avalanche' : 'Snowball')
-  renderPlanCards(generatePlan(valid, extra, method))
+  renderPlanCards(generatePlan(valid, extra, method), extra)
 
   // ── COMPARE MODAL DATA ──
   const odds = getConsolidationOdds(S.creditScore, totalUtil)
   const compareData = [
-    { name: 'Avalanche method', date: fmtDate(avaFull.months), saved: fmt(intSavedAva), savedMuted: false },
-    { name: 'Snowball method',  date: fmtDate(snowFull.months), saved: fmt(intSavedSnow), savedMuted: false },
-    { name: 'Minimum payments only', date: fmtDate(minimums.months), saved: '--', savedMuted: true },
+    { key: 'avalanche', name: 'Avalanche method', date: fmtDate(avaFull.months), saved: fmt(intSavedAva), savedMuted: false },
+    { key: 'snowball',  name: 'Snowball method',  date: fmtDate(snowFull.months), saved: fmt(intSavedSnow), savedMuted: false },
+    { key: 'minimums',  name: 'Minimum payments only', date: fmtDate(minimums.months), saved: '--', savedMuted: true },
   ]
   if (S.creditScore !== 'poor') {
-    compareData.push({ name: 'Consolidation loan', date: odds.label, saved: odds.rate, savedMuted: true })
+    compareData.push({ key: 'consolidation', name: 'Consolidation loan', date: odds.label, saved: odds.rate, savedMuted: true })
   }
   if (showSettlement) {
-    compareData.push({ name: 'Debt settlement', date: 'Reduces principal owed', saved: 'See below', savedMuted: true })
+    compareData.push({ key: 'settlement', name: 'Debt settlement', date: 'Reduces principal owed', saved: 'See below', savedMuted: true })
   }
   populateCompareModal(compareData)
 
@@ -1342,9 +1345,10 @@ function togglePlan(id) {
   lbl.textContent=open?'Hide payment plan':'Show my step-by-step payment plan'
 }
 
-function renderPlanCards(steps) {
+function renderPlanCards(steps, extra, note) {
+  extra = extra || 0
   const container = document.getElementById('plan-cards-container')
-  container.innerHTML = ''
+  container.innerHTML = note ? '<div style="background:#FFF8F6;border:1px solid rgba(255,77,46,0.25);border-radius:12px;padding:14px 16px;font-size:13px;color:#6B7280;margin-bottom:12px;line-height:1.6;">' + note + '</div>' : ''
   let phaseStart = 1
   let currentAccount = ''
   let currentPayment = 0
@@ -1360,15 +1364,16 @@ function renderPlanCards(steps) {
       const card = document.createElement('div')
       card.className = 'phase-card' + (isLast ? ' phase-final' : '')
       const rolloverHtml = phaseStart > 1 ? '<div class="phase-rollover">↑ Includes rolled payment from previous account</div>' : ''
+      const nextPay = step.newPay + extra
       const instructionText = step.nextName
-        ? 'Pay the minimum on all other accounts. Once paid off, roll the full ' + fmt(currentPayment) + '/mo onto ' + step.nextName + '.'
+        ? 'Pay the minimum on all other accounts. Once paid off, your payment on ' + step.nextName + ' becomes ' + fmt(nextPay) + '/mo.'
         : 'Pay the minimum on all other accounts. This is your final target — once paid off, you\'re done.'
       card.innerHTML = '<div class="phase-header"><span class="phase-months">' + monthRange + '</span><span class="phase-payment">' + fmt(currentPayment) + '/mo</span></div><div class="phase-account">' + currentAccount + '</div>' + rolloverHtml + '<div class="phase-instruction">' + instructionText + '</div>'
       container.appendChild(card)
       phaseStart = step.month + 1
       if (step.nextName) {
         currentAccount = step.nextName
-        currentPayment = step.newPay
+        currentPayment = step.newPay + extra
       }
     } else if (step.type === 'done') {
       const done = document.createElement('div')
@@ -1380,7 +1385,7 @@ function renderPlanCards(steps) {
 }
 
 function updateResultsWithExtra() {
-  const {valid, available, minimums} = calcD
+  const {valid, minimums} = calcD
   const extra = Number(document.getElementById('extra-slider').value)
   document.getElementById('slider-display').textContent = fmt(extra) + '/mo'
 
@@ -1395,26 +1400,31 @@ function updateResultsWithExtra() {
   const sortedForFirst = [...valid].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
   const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
 
+  _selectedMethod = avaBetter ? 'avalanche' : 'snowball'
   document.getElementById('rec-text').textContent = generateRecText(extra, avaFull, snowFull)
   document.getElementById('stat-date').textContent = fmtDate(recommendedRun.months)
   document.getElementById('stat-saved').textContent = fmt(intSavedRec)
   document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
   document.getElementById('plan-method-label').textContent = 'Recommended method: ' + (avaBetter ? 'Avalanche' : 'Snowball')
-  renderPlanCards(generatePlan(valid, extra, avaBetter ? 'avalanche' : 'snowball'))
+  renderPlanCards(generatePlan(valid, extra, avaBetter ? 'avalanche' : 'snowball'), extra)
 }
 
 function populateCompareModal(compareData) {
+  _compareData = compareData
   const container = document.getElementById('compare-modal-rows')
   container.innerHTML = ''
   compareData.forEach(row => {
+    const isActive = row.key === _selectedMethod
     const div = document.createElement('div')
-    div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:14px 0;border-bottom:1px solid #E8E4DC;'
-    div.innerHTML = '<div style="flex:1;font-size:14px;font-weight:600;color:#0A0E12;">' + row.name + '</div><div style="font-family:var(--mono);font-size:12px;color:#6B7280;white-space:nowrap;">' + row.date + '</div><div style="font-family:var(--mono);font-size:12px;font-weight:' + (row.savedMuted?'400':'700') + ';color:' + (row.savedMuted?'#6B7280':'#FF4D2E') + ';white-space:nowrap;min-width:60px;text-align:right;">' + row.saved + '</div>'
+    div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:14px 12px;border-bottom:1px solid #E8E4DC;cursor:pointer;border-left:3px solid ' + (isActive ? '#FF4D2E' : 'transparent') + ';margin-left:-12px;padding-left:' + (isActive ? '9px' : '12px') + ';-webkit-tap-highlight-color:transparent;'
+    div.onclick = function() { selectMethod(row.key) }
+    div.innerHTML = '<div style="flex:1;font-size:14px;font-weight:' + (isActive?'700':'600') + ';color:#0A0E12;">' + row.name + '</div><div style="font-family:var(--mono);font-size:12px;color:#6B7280;white-space:nowrap;margin-right:8px;">' + row.date + '</div><div style="font-family:var(--mono);font-size:12px;font-weight:' + (row.savedMuted?'400':'700') + ';color:' + (row.savedMuted?'#6B7280':'#FF4D2E') + ';white-space:nowrap;min-width:60px;text-align:right;">' + row.saved + '</div>'
     container.appendChild(div)
   })
 }
 
 function openCompare() {
+  populateCompareModal(_compareData)
   document.getElementById('compare-modal').classList.add('open')
   document.body.style.overflow = 'hidden'
 }
@@ -1422,6 +1432,66 @@ function openCompare() {
 function closeCompare() {
   document.getElementById('compare-modal').classList.remove('open')
   document.body.style.overflow = ''
+}
+
+function selectMethod(key) {
+  _selectedMethod = key
+  closeCompare()
+
+  const {valid, minimums, totalUtil, coFee, youKeep} = calcD
+  const extra = Number(document.getElementById('extra-slider').value)
+  const avaFull = runAvalanche(valid, extra)
+  const snowFull = runSnowball(valid, extra)
+  const avaBetter = avaFull.totalInterest <= snowFull.totalInterest
+  const intSavedAva = minimums.totalInterest - avaFull.totalInterest
+  const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
+  const planContainer = document.getElementById('plan-cards-container')
+
+  const methodLabel = { avalanche: 'Avalanche method', snowball: 'Snowball method', minimums: 'Minimum payments only', consolidation: 'Consolidation loan', settlement: 'Debt settlement' }
+  document.getElementById('plan-method-label').textContent = 'Viewing: ' + (methodLabel[key] || key)
+
+  if (key === 'avalanche') {
+    const sortedForFirst = [...valid].sort((a,b) => (Number(b.apr)||22.99)-(Number(a.apr)||22.99))
+    const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
+    document.getElementById('rec-text').textContent = generateRecText(extra, avaFull, snowFull)
+    document.getElementById('stat-date').textContent = fmtDate(avaFull.months)
+    document.getElementById('stat-saved').textContent = fmt(intSavedAva)
+    document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
+    renderPlanCards(generatePlan(valid, extra, 'avalanche'), extra)
+
+  } else if (key === 'snowball') {
+    const sortedForFirst = [...valid].sort((a,b) => Number(a.balance)-Number(b.balance))
+    const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
+    document.getElementById('rec-text').textContent = generateRecText(extra, avaFull, snowFull)
+    document.getElementById('stat-date').textContent = fmtDate(snowFull.months)
+    document.getElementById('stat-saved').textContent = fmt(intSavedSnow)
+    document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
+    renderPlanCards(generatePlan(valid, extra, 'snowball'), extra)
+
+  } else if (key === 'minimums') {
+    const sortedForFirst = [...valid].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
+    const firstPay = Number(sortedForFirst[0]?.minPay) || 0
+    document.getElementById('rec-text').textContent = 'Minimum payments only — no extra payment applied. This path costs the most in interest and takes the longest to complete. You are not using any of your available cash flow to accelerate payoff.'
+    document.getElementById('stat-date').textContent = fmtDate(minimums.months)
+    document.getElementById('stat-saved').textContent = '--'
+    document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
+    renderPlanCards(generatePlan(valid, 0, avaBetter ? 'avalanche' : 'snowball'), 0, 'This path costs the most in interest. No extra payment applied.')
+
+  } else if (key === 'consolidation') {
+    const odds = getConsolidationOdds(S.creditScore, totalUtil)
+    document.getElementById('rec-text').textContent = odds.text
+    document.getElementById('stat-date').textContent = odds.label
+    document.getElementById('stat-saved').textContent = odds.rate || '--'
+    document.getElementById('stat-payment').textContent = '--'
+    planContainer.innerHTML = '<div class="odds-box ' + odds.level + '"><div class="odds-title">' + odds.label + ': ' + odds.rate + '</div><div class="odds-text">' + odds.text + '</div></div>'
+
+  } else if (key === 'settlement') {
+    document.getElementById('rec-text').textContent = 'Debt settlement reduces the principal you owe — typically to 40–60 cents on the dollar — rather than just the interest rate. Settlement companies charge roughly 25% of enrolled debt to manage the process. debtself gives you the same tools for $249 flat.'
+    document.getElementById('stat-date').textContent = '6–48 months'
+    document.getElementById('stat-saved').textContent = fmt(youKeep) + ' in fees'
+    document.getElementById('stat-payment').textContent = 'Varies'
+    planContainer.innerHTML = '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process — word-for-word scripts, creditor intelligence, and a full settlement platform — for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>'
+  }
 }
 
 
