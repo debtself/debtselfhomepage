@@ -22,19 +22,19 @@ function buildEmail(email, debt_amount, assessment) {
   const numberCard = hasAssessment ? `
     <div style="background:#F7F5F0;border-radius:12px;padding:24px;margin:24px 0;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #E8E4DC;">
-        <span style="font-size:14px;color:#6B7280;">Total debt</span>
+        <span style="font-size:14px;color:#6B7280;white-space:nowrap;margin-right:16px;">Total debt</span>
         <span style="font-size:16px;font-weight:700;color:#0A0E12;">${fmt(debt_amount)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #E8E4DC;">
-        <span style="font-size:14px;color:#6B7280;">Recommended path</span>
+        <span style="font-size:14px;color:#6B7280;white-space:nowrap;margin-right:16px;">Recommended path</span>
         <span style="font-size:14px;font-weight:600;color:#0A0E12;">${assessment.recommendedMethod}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #E8E4DC;">
-        <span style="font-size:14px;color:#6B7280;">Debt free by</span>
+        <span style="font-size:14px;color:#6B7280;white-space:nowrap;margin-right:16px;">Debt free by</span>
         <span style="font-size:14px;font-weight:600;color:#0A0E12;">${assessment.debtFreeDate || 'See your plan'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:14px;color:#6B7280;">Interest saved vs minimums</span>
+        <span style="font-size:14px;color:#6B7280;white-space:nowrap;margin-right:16px;">Interest saved vs minimums</span>
         <span style="font-size:16px;font-weight:700;color:#FF4D2E;">${fmt(assessment.interestSaved)}</span>
       </div>
     </div>
