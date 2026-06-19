@@ -462,6 +462,8 @@
     .month-confirm-btns { display: flex; gap: 8px; }
     .month-confirm-btn-yes { flex: 1; background: var(--red); color: white; border: none; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 700; font-family: var(--sans); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     .month-confirm-btn-no { flex: 1; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; color: var(--muted); font-family: var(--sans); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .month-check-row.success { background: var(--red-soft); border-radius: 8px; }
+    .month-check-input:disabled { opacity: 1; cursor: default; }
 
     /* MOBILE */
     @media(max-width:480px){
@@ -1530,7 +1532,7 @@ function renderMilestones(planSteps, totalDebt) {
 // ═══════════════════════════════════════
 //  RECALCULATE — central live update
 // ═══════════════════════════════════════
-function recalculate() {
+function recalculate(animateDate = false) {
   if (!liveState) return
 
   const debts = liveState.debts
@@ -1617,7 +1619,20 @@ function recalculate() {
   // Stat boxes
   const sortedForFirst = [...debts].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
   const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
-  document.getElementById('stat-date').textContent = fmtDate(recMonths)
+  const statDateEl = document.getElementById('stat-date')
+  const newDateText = fmtDate(recMonths)
+  if (animateDate && statDateEl.textContent && statDateEl.textContent !== newDateText) {
+    statDateEl.style.transition = 'opacity .25s ease, transform .25s ease'
+    statDateEl.style.opacity = '0'
+    statDateEl.style.transform = 'translateY(6px)'
+    setTimeout(() => {
+      statDateEl.textContent = newDateText
+      statDateEl.style.opacity = '1'
+      statDateEl.style.transform = 'translateY(0)'
+    }, 250)
+  } else {
+    statDateEl.textContent = newDateText
+  }
   document.getElementById('stat-saved').textContent = fmt(intSavedRec)
   document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
 
@@ -1791,7 +1806,12 @@ function readMonthExtraInput() {
 function onMonthCheckboxClick(el) {
   if (!liveState) { if (el) el.checked = false; return }
   if (liveState.methodLocked) {
-    applyMonthPayment(readMonthExtraInput())
+    el.disabled = true
+    const lbl = el.nextElementSibling
+    if (lbl) lbl.textContent = 'Payment logged'
+    if (el.parentElement) el.parentElement.classList.add('success')
+    const extra = readMonthExtraInput()
+    setTimeout(() => applyMonthPayment(extra), 500)
   } else {
     const panel = document.getElementById('month-confirm')
     if (panel) panel.style.display = 'block'
@@ -1811,14 +1831,22 @@ function confirmFirstMonthLock() {
   liveState.lockedMethod = _selectedMethod
   const panel = document.getElementById('month-confirm')
   if (panel) panel.style.display = 'none'
-  applyMonthPayment(readMonthExtraInput())
+  const cb = document.getElementById('month1-cb')
+  if (cb) {
+    cb.disabled = true
+    const lbl = cb.nextElementSibling
+    if (lbl) lbl.textContent = 'Payment logged'
+    if (cb.parentElement) cb.parentElement.classList.add('success')
+  }
+  const extra = readMonthExtraInput()
+  setTimeout(() => applyMonthPayment(extra), 500)
 }
 
 function applyMonthPayment(oneTimeExtra = 0) {
   if (!liveState) return
   liveState.debts = advanceOneMonth(liveState.debts, liveState.extra + oneTimeExtra, liveState.lockedMethod)
   liveState.monthsCompleted += 1
-  recalculate()
+  recalculate(true)
   savePlannerProgressNow()
 }
 
@@ -1835,7 +1863,7 @@ function onLumpInput() {
   clearTimeout(_lumpDebounce)
   _lumpDebounce = setTimeout(() => {
     liveState.lumpSum = Number(document.getElementById('lump-input').value) || 0
-    recalculate()
+    recalculate(true)
   }, 400)
 }
 
@@ -1878,7 +1906,7 @@ function finishEdit(el, newVal, field, id) {
   }
   el.innerHTML = ''
   el.textContent = fmt(newVal)
-  recalculate()
+  recalculate(true)
   savePlannerProgressNow()
 }
 
