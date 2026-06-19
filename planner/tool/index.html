@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>debtself planner — Your Complete Debt Plan</title>
+  <title>debtself planner: Your Complete Debt Plan</title>
   <script>
     // Auth check — must have valid session from gate screen
     ;(function() {
@@ -499,7 +499,7 @@
   <div class="wrap">
     <div class="eyebrow">Your complete debt plan</div>
     <div class="headline">See every path out of your debt. Ranked by what it actually costs you.</div>
-    <div class="sub">Enter your accounts and budget. Get a personalized plan in under 5 minutes. No credit check. No sign-up. No agenda — just your real numbers.</div>
+    <div class="sub">Enter your accounts and budget. Get a personalized plan in under 5 minutes. No credit check. No sign-up. No agenda. Just your real numbers.</div>
     <div class="pillars">
       <div class="pillar"><div class="pillar-dot"></div><div class="pillar-text">Avalanche and snowball plans with your exact step-by-step payment schedule</div></div>
       <div class="pillar"><div class="pillar-dot"></div><div class="pillar-text">Your budget determines which paths you can actually execute right now</div></div>
@@ -536,7 +536,7 @@
   <div class="wrap">
     <div class="eyebrow m">Step 2 of 4</div>
     <div class="headline">What is your approximate credit score?</div>
-    <div class="sub">This helps us show you the consolidation loan path with realistic odds. Be honest — it only helps your plan.</div>
+    <div class="sub">This helps us show you the consolidation loan path with realistic odds. Be honest. It only helps your plan.</div>
     <div class="score-note">Not sure? Check <a href="https://www.creditkarma.com" target="_blank">Credit Karma</a> or your bank app. Both show your score for free.</div>
     <div class="score-options">
       <div class="score-opt" onclick="selectScore('excellent',this)">
@@ -875,7 +875,7 @@ function addDebt() {
       <button class="type-btn active" id="${id}-cc" onclick="setType('${id}','cc',this)">Credit Card</button>
       <button class="type-btn" id="${id}-loan" onclick="setType('${id}','loan',this)">Personal Loan</button>
     </div>
-    <div id="${id}-loan-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;margin-bottom:14px;">Unsecured loans only — personal loans, medical debt, etc. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
+    <div id="${id}-loan-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;margin-bottom:14px;">Unsecured loans only. Personal loans, medical debt, and similar accounts. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
     <div class="fl" style="margin-bottom:8px;">
       <div class="fl-lbl">Account name</div>
       <input class="fl-inp" type="text" placeholder="e.g. Chase Sapphire" style="font-family:var(--sans);font-size:15px;" oninput="updD('${id}','name',this.value)" />
@@ -1381,30 +1381,30 @@ function generateRecContent(extra, avaFull, snowFull, params) {
 
   if (available < 0) {
     verdict = 'Your current budget cannot support any payoff plan without changes.'
-    why = 'Your expenses exceed your income by ' + fmt(Math.abs(available)) + ' per month. At this pace, minimum payments alone are not sustainable. Before choosing a payoff method, either income needs to go up or expenses need to come down. Debt settlement — which reduces what you owe, not just the rate — may be the only viable path right now.'
+    why = 'Your expenses exceed your income by ' + fmt(Math.abs(available)) + ' per month. At this pace, minimum payments alone are not sustainable. Before choosing a payoff method, either income needs to go up or expenses need to come down. Debt settlement, which reduces what you owe and not just the rate, may be the only viable path right now.'
     tradeoff = 'No payoff method works well when the budget is this tight. The interest accumulating each month is outpacing what you can pay above minimums.'
   } else if (available < 300 && creditScore !== 'excellent') {
-    verdict = 'Your budget is too tight for payoff to work — debt settlement is worth understanding.'
+    verdict = 'Your budget is too tight for payoff to work. Debt settlement is worth understanding.'
     why = 'With only ' + fmt(available) + ' left after expenses and minimums, accelerating payoff is difficult. ' + aprName + ' at ' + aprVal + '% APR is costing you approximately ' + fmt(monthlyInterestCost) + ' in interest every month. At this pace the interest may outrun your extra payments over time. With ' + fmt(extra) + ' extra per month, you reach debt free by ' + fmtDate(avaFull.months) + '.'
-    tradeoff = 'If your budget does not improve, the total interest you pay may exceed what settlement would cost. Settlement reduces the principal — a fundamentally different outcome than any payoff plan.'
+    tradeoff = 'If your budget does not improve, the total interest you pay may exceed what settlement would cost. Settlement reduces the principal. That is a fundamentally different outcome than any payoff plan.'
   } else if (creditScore === 'excellent' && totalUtil <= 50) {
     verdict = 'With your credit profile, consolidation may beat both payoff methods.'
-    why = 'Your score and utilization may qualify you for a consolidation loan at 8 to 13% APR — well below your current weighted average of ' + weightedAPR + '%. If approved, consolidation reduces your interest cost immediately without the month-by-month discipline of payoff plans. Without consolidation, the avalanche method targeting ' + aprName + ' at ' + aprVal + '% APR saves ' + fmt(intSavedAva) + ' and gets you debt free by ' + fmtDate(avaFull.months) + '.'
+    why = 'Your score and utilization may qualify you for a consolidation loan at 8 to 13% APR, well below your current weighted average of ' + weightedAPR + '%. If approved, consolidation reduces your interest cost immediately without the month-by-month discipline of payoff plans. Without consolidation, the avalanche method targeting ' + aprName + ' at ' + aprVal + '% APR saves ' + fmt(intSavedAva) + ' and gets you debt free by ' + fmtDate(avaFull.months) + '.'
     tradeoff = avaBetter
       ? (intDiff > 200 ? 'The snowball method would pay off your smallest account sooner for a quick win, but costs ' + fmt(intDiff) + ' more in total interest.' : 'The snowball method would give you a quicker early win on your smallest balance with minimal cost difference.')
-      : 'The avalanche method targets your highest rate first and may feel slower early on — the math favors snowball for your specific balances.'
+      : 'The avalanche method targets your highest rate first and may feel slower early on. The math favors snowball for your specific balances.'
   } else if (avaBetter && intDiff >= 500) {
     verdict = 'Avalanche is your best path out of this debt.'
     why = aprName + ' at ' + aprVal + '% APR is costing you approximately ' + fmt(monthlyInterestCost) + ' in interest every month.' + (pctHighRate > 0 ? ' ' + pctHighRate + '% of your total debt carries rates above 20%, which is why targeting the highest rate first saves you ' + fmt(intDiff) + ' more than the snowball method.' : '') + ' With ' + fmt(extra) + ' available above your minimums each month, avalanche gets you debt free by ' + fmtDate(avaFull.months) + '.'
     tradeoff = 'The snowball method would pay off your smallest account sooner for a quick win, but costs ' + fmt(intDiff) + ' more in total interest.'
   } else if (avaBetter) {
     verdict = 'Avalanche is your best path out of this debt.'
-    why = 'The avalanche and snowball methods are only ' + fmt(intDiff) + ' apart for your situation — your account balances and rates happen to align closely. We recommend avalanche because ' + aprName + ' at ' + aprVal + '% APR is costing you ' + fmt(monthlyInterestCost) + ' per month in interest, and targeting it first is the mathematically cleaner choice. You are debt free by ' + fmtDate(avaFull.months) + '.'
+    why = 'The avalanche and snowball methods are only ' + fmt(intDiff) + ' apart for your situation. Your account balances and rates happen to align closely. We recommend avalanche because ' + aprName + ' at ' + aprVal + '% APR is costing you ' + fmt(monthlyInterestCost) + ' per month in interest, and targeting it first is the mathematically cleaner choice. You are debt free by ' + fmtDate(avaFull.months) + '.'
     tradeoff = 'The snowball method would give you a quicker early win on your smallest balance with minimal cost difference.'
   } else {
     verdict = 'Snowball is your best path given your account structure.'
-    why = 'For your specific balances and rates, the snowball method saves ' + fmt(intSavedSnow) + ' in total interest — ' + fmt(intDiff) + ' more than avalanche. Starting with your smallest balance creates momentum and frees up payment faster given how your accounts are structured. With ' + fmt(extra) + ' extra per month, you are debt free by ' + fmtDate(snowFull.months) + '.'
-    tradeoff = 'The avalanche method targets your highest rate first and may feel slower early on — your first payoff milestone takes longer, but the math favors snowball for your specific balances.'
+    why = 'For your specific balances and rates, the snowball method saves ' + fmt(intSavedSnow) + ' in total interest, ' + fmt(intDiff) + ' more than avalanche. Starting with your smallest balance creates momentum and frees up payment faster given how your accounts are structured. With ' + fmt(extra) + ' extra per month, you are debt free by ' + fmtDate(snowFull.months) + '.'
+    tradeoff = 'The avalanche method targets your highest rate first and may feel slower early on. Your first payoff milestone takes longer, but the math favors snowball for your specific balances.'
   }
 
   return { verdict, why, tradeoff }
@@ -1461,14 +1461,14 @@ function renderMilestones(planSteps, totalDebt) {
   if (firstPayoff) {
     milestones.push({
       title: (firstPayoff.name || 'First account').toUpperCase() + ' PAID OFF',
-      date: 'Month ' + firstPayoff.month + ' — ' + fmtDate(firstPayoff.month)
+      date: 'Month ' + firstPayoff.month + ': ' + fmtDate(firstPayoff.month)
     })
   }
   if (halfwayMonth > 0 && (!firstPayoff || halfwayMonth !== firstPayoff.month)) {
-    milestones.push({ title: 'Halfway there', date: 'Month ' + halfwayMonth + ' — ' + fmtDate(halfwayMonth) })
+    milestones.push({ title: 'Halfway there', date: 'Month ' + halfwayMonth + ': ' + fmtDate(halfwayMonth) })
   }
   if (doneStep && doneStep.month > 0) {
-    milestones.push({ title: 'Debt free', date: 'Month ' + doneStep.month + ' — ' + fmtDate(doneStep.month) })
+    milestones.push({ title: 'Debt free', date: 'Month ' + doneStep.month + ': ' + fmtDate(doneStep.month) })
   }
 
   milestones.forEach(m => {
@@ -1591,7 +1591,7 @@ function recalculate() {
   populateCompareModal(compareData)
 
   // CTA
-  document.getElementById('ds-wrap').innerHTML = showSettlement ? '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process — word-for-word scripts, creditor intelligence, and a full settlement platform — for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>' : ''
+  document.getElementById('ds-wrap').innerHTML = showSettlement ? '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process: word-for-word scripts, creditor intelligence, and a full settlement platform, for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>' : ''
 
   // Snapshot for email
   window._plannerSnapshot = {
@@ -1675,7 +1675,7 @@ function renderPlanCards(steps, extra, note) {
       currentPayment = step.targetPay
     } else if (step.type === 'payoff') {
       const startMonth = Math.min(phaseStart, step.month)
-      const monthRange = startMonth === step.month ? 'Month ' + startMonth : 'Month ' + startMonth + ' – ' + step.month
+      const monthRange = startMonth === step.month ? 'Month ' + startMonth : 'Month ' + startMonth + ' to ' + step.month
       const isLast = !step.nextName
       const card = document.createElement('div')
       card.className = 'phase-card' + (isLast ? ' phase-final' : '')
@@ -1683,7 +1683,7 @@ function renderPlanCards(steps, extra, note) {
       const nextPay = step.newPay + extra
       const instructionText = step.nextName
         ? 'Pay the minimum on all other accounts. Once paid off, your payment on ' + step.nextName + ' becomes ' + fmt(nextPay) + '/mo.'
-        : 'Pay the minimum on all other accounts. This is your final target — once paid off, you\'re done.'
+        : 'Pay the minimum on all other accounts. This is your final target. Once paid off, you are done.'
       card.innerHTML = '<div class="phase-header"><span class="phase-months">' + monthRange + '</span><span class="phase-payment">' + fmt(currentPayment) + '/mo</span></div><div class="phase-account">' + currentAccount + '</div>' + rolloverHtml + '<div class="phase-instruction">' + instructionText + '</div>'
       container.appendChild(card)
       phaseStart = step.month + 1
@@ -1841,7 +1841,7 @@ function selectMethod(key) {
   } else if (key === 'minimums') {
     const sortedForFirst = [...debts].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
     const firstPay = Number(sortedForFirst[0]?.minPay) || 0
-    document.getElementById('rec-verdict').textContent = 'Minimum payments only — the most expensive path.'
+    document.getElementById('rec-verdict').textContent = 'Minimum payments only. The most expensive path.'
     document.getElementById('rec-why').textContent = 'No extra payment applied. Each account is paid at its entered minimum until the balance reaches zero. At this pace you are debt free by ' + fmtDate(minimums.months) + ' and pay ' + fmt(minimums.totalInterest) + ' in total interest.'
     document.getElementById('rec-tradeoff').textContent = 'This path costs the most in interest and takes the longest. Consider even a small extra payment to accelerate your timeline.'
     document.getElementById('stat-date').textContent = fmtDate(minimums.months)
@@ -1851,7 +1851,7 @@ function selectMethod(key) {
 
   } else if (key === 'consolidation') {
     const odds = getConsolidationOdds(liveState.creditScore, totalUtil)
-    document.getElementById('rec-verdict').textContent = odds.label + ' — ' + odds.rate
+    document.getElementById('rec-verdict').textContent = odds.label + ': ' + odds.rate
     document.getElementById('rec-why').textContent = odds.text
     document.getElementById('rec-tradeoff').textContent = ''
     document.getElementById('stat-date').textContent = odds.label
@@ -1860,13 +1860,13 @@ function selectMethod(key) {
     planContainer.innerHTML = '<div class="odds-box ' + odds.level + '"><div class="odds-title">' + odds.label + ': ' + odds.rate + '</div><div class="odds-text">' + odds.text + '</div></div>'
 
   } else if (key === 'settlement') {
-    document.getElementById('rec-verdict').textContent = 'Debt settlement reduces the principal you owe — not just the rate.'
+    document.getElementById('rec-verdict').textContent = 'Debt settlement reduces the principal you owe, not just the interest rate.'
     document.getElementById('rec-why').textContent = 'Settlement companies charge roughly 25% of enrolled debt to manage the process. debtself gives you the same tools for $249 flat. Typical settlement resolves debt for 40 to 60 cents on the dollar, often in 6 to 48 months.'
     document.getElementById('rec-tradeoff').textContent = 'Settlement affects your credit score during the process. The trade-off is a lower total amount paid versus a period of credit impact.'
-    document.getElementById('stat-date').textContent = '6–48 months'
+    document.getElementById('stat-date').textContent = '6 to 48 months'
     document.getElementById('stat-saved').textContent = fmt(youKeep) + ' in fees'
     document.getElementById('stat-payment').textContent = 'Varies'
-    planContainer.innerHTML = '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process — word-for-word scripts, creditor intelligence, and a full settlement platform — for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>'
+    planContainer.innerHTML = '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process: word-for-word scripts, creditor intelligence, and a full settlement platform, for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>'
   }
 }
 
@@ -2019,7 +2019,7 @@ function resumeProgress() {
             <button class="type-btn ${!isLoan?'active':''}" id="${d.id}-cc" onclick="setType('${d.id}','cc',this)">Credit Card</button>
             <button class="type-btn ${isLoan?'active':''}" id="${d.id}-loan" onclick="setType('${d.id}','loan',this)">Personal Loan</button>
           </div>
-          <div id="${d.id}-loan-hint" style="display:${isLoan?'block':'none'};font-size:11px;color:var(--muted);margin-top:6px;">Unsecured loans only — personal loans, medical debt, etc. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
+          <div id="${d.id}-loan-hint" style="display:${isLoan?'block':'none'};font-size:11px;color:var(--muted);margin-top:6px;">Unsecured loans only. Personal loans, medical debt, and similar accounts. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
           <div class="fl" style="margin-bottom:8px;">
             <div class="fl-lbl">Account name</div>
             <input class="fl-inp" type="text" value="${d.name||''}" style="font-family:var(--sans);font-size:15px;" oninput="updD('${d.id}','name',this.value)" />
