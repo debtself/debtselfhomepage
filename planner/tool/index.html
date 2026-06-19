@@ -1362,7 +1362,9 @@ function buildUnlock() {
   // DTI
   const dtiEl=document.getElementById('ul-dti')
   dtiEl.textContent=dti+'%'
-  dtiEl.style.color=dti<=36?'var(--green)':dti<=50?'var(--amber)':'var(--red)'
+  dtiEl.style.color = available < 300
+    ? (dti <= 50 ? 'var(--amber)' : 'var(--red)')
+    : (dti <= 36 ? 'var(--green)' : dti <= 50 ? 'var(--amber)' : 'var(--red)')
   const dtiCaption = document.getElementById('ul-dti-caption')
   if (dtiCaption) dtiCaption.textContent = dtiBasis === 'gross'
     ? 'Calculated using your gross income, the same way lenders do.'
