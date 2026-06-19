@@ -1383,7 +1383,7 @@ function buildUnlock() {
 // ═══════════════════════════════════════
 function calcDebtFreedomScore({dti, available, totalUtil, weightedAPR, months}) {
   const f1 = dti < 15 ? 20 : dti < 30 ? 15 : dti < 45 ? 10 : 0
-  const f2 = available > 500 ? 20 : available > 200 ? 15 : available > 0 ? 8 : 0
+  const f2 = available > 500 ? 20 : available >= 300 ? 15 : available > 0 ? 8 : 0
   const f3 = totalUtil < 30 ? 20 : totalUtil < 50 ? 15 : totalUtil < 75 ? 8 : 0
   const f4 = weightedAPR < 12 ? 20 : weightedAPR < 18 ? 15 : weightedAPR < 24 ? 8 : 0
   const f5 = months < 24 ? 20 : months < 48 ? 15 : months < 84 ? 8 : 0
