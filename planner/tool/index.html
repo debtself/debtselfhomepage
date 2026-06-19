@@ -875,7 +875,7 @@ function addDebt() {
       <button class="type-btn active" id="${id}-cc" onclick="setType('${id}','cc',this)">Credit Card</button>
       <button class="type-btn" id="${id}-loan" onclick="setType('${id}','loan',this)">Personal Loan</button>
     </div>
-    <div id="${id}-loan-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;">Unsecured loans only — personal loans, medical debt, etc. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
+    <div id="${id}-loan-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;margin-bottom:14px;">Unsecured loans only — personal loans, medical debt, etc. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
     <div class="fl" style="margin-bottom:8px;">
       <div class="fl-lbl">Account name</div>
       <input class="fl-inp" type="text" placeholder="e.g. Chase Sapphire" style="font-family:var(--sans);font-size:15px;" oninput="updD('${id}','name',this.value)" />
