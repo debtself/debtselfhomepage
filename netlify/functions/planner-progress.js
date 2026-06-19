@@ -46,7 +46,7 @@ exports.handler = async (event) => {
 
     const { data: progress, error: progressError } = await supabase
       .from('planner_progress')
-      .select('debts, extra, method_locked, locked_method, months_completed, budget, credit_score, updated_at')
+      .select('debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months, updated_at')
       .eq('session_token', session_token)
       .maybeSingle()
 
@@ -71,6 +71,8 @@ exports.handler = async (event) => {
           months_completed: progress.months_completed,
           budget: progress.budget,
           credit_score: progress.credit_score,
+          baseline_interest_saved: progress.baseline_interest_saved,
+          baseline_min_months: progress.baseline_min_months,
           updated_at: progress.updated_at,
         },
       }),
@@ -85,7 +87,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Invalid request' }) }
   }
 
-  const { session_token, debts, extra, method_locked, locked_method, months_completed, budget, credit_score } = body
+  const { session_token, debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months } = body
 
   if (!session_token) {
     return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'session_token is required' }) }
@@ -114,7 +116,7 @@ exports.handler = async (event) => {
   // Fetch existing row before writing
   const { data: existing } = await supabase
     .from('planner_progress')
-    .select('method_locked, locked_method, months_completed')
+    .select('method_locked, locked_method, months_completed, baseline_interest_saved, baseline_min_months')
     .eq('session_token', session_token)
     .maybeSingle()
 
@@ -125,6 +127,12 @@ exports.handler = async (event) => {
     ? existing.locked_method
     : (['avalanche', 'snowball'].includes(locked_method) ? locked_method : null)
   const savedMonthsCompleted = Math.max(existing?.months_completed || 0, months_completed || 0)
+  const savedBaselineInterestSaved = existing?.baseline_interest_saved != null
+    ? existing.baseline_interest_saved
+    : (baseline_interest_saved ?? null)
+  const savedBaselineMinMonths = existing?.baseline_min_months != null
+    ? existing.baseline_min_months
+    : (baseline_min_months ?? null)
 
   const upsertPayload = {
     session_token,
@@ -135,6 +143,8 @@ exports.handler = async (event) => {
     months_completed: savedMonthsCompleted,
     budget: normalizedBudget,
     credit_score: normalizedCreditScore,
+    baseline_interest_saved: savedBaselineInterestSaved,
+    baseline_min_months: savedBaselineMinMonths,
     updated_at: new Date().toISOString(),
   }
 
