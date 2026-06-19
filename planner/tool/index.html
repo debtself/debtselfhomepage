@@ -447,6 +447,22 @@
     .btn-add-oblig { background:none; border:1.5px dashed var(--border); border-radius:8px; padding:10px; font-size:13px; color:var(--muted); font-family:var(--sans); cursor:pointer; width:100%; transition:all .15s; }
     .btn-add-oblig:hover { border-color:var(--red); color:var(--red); background:var(--red-soft); }
 
+    /* PLAN PROGRESS BAR */
+    .plan-progress-wrap { margin-bottom: 14px; }
+    .plan-progress-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+    .plan-progress-fill { height: 100%; background: var(--red); border-radius: 3px; transition: width 0.4s ease; }
+    .plan-progress-label { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    /* MONTH TRACKING CHECKBOX */
+    .month-check-row { display: flex; align-items: center; gap: 8px; padding: 10px 0 6px; cursor: pointer; }
+    .month-check-input { accent-color: var(--red); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    .month-check-label { font-size: 13px; color: var(--dark); font-weight: 600; cursor: pointer; }
+    .month-confirm-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; }
+    .month-confirm-text { font-size: 13px; color: var(--dark); line-height: 1.65; margin-bottom: 12px; }
+    .month-confirm-btns { display: flex; gap: 8px; }
+    .month-confirm-btn-yes { flex: 1; background: var(--red); color: white; border: none; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 700; font-family: var(--sans); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .month-confirm-btn-no { flex: 1; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; color: var(--muted); font-family: var(--sans); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
     /* MOBILE */
     @media(max-width:480px){
       .wrap{padding:24px 16px 80px;}
@@ -783,6 +799,10 @@
     <div class="res-section">
       <div class="res-section-eyebrow">YOUR MONTH-BY-MONTH PLAN</div>
       <div id="plan-method-label" class="res-section-sub"></div>
+      <div class="plan-progress-wrap">
+        <div class="plan-progress-track"><div class="plan-progress-fill" id="plan-progress-fill"></div></div>
+        <div class="plan-progress-label" id="plan-progress-label"></div>
+      </div>
       <div id="plan-cards-container"></div>
     </div>
 
@@ -1363,6 +1383,34 @@ function applyLumpSumToDebts(debts, lumpSum, method) {
 }
 
 // ═══════════════════════════════════════
+//  ADVANCE ONE MONTH (non-mutating)
+// ═══════════════════════════════════════
+function advanceOneMonth(debts, extra, method) {
+  const copied = debts.map(d => ({...d, balance: Number(d.balance)}))
+  const active = copied.filter(d => d.balance > 0)
+  if (!active.length) return copied
+
+  method === 'avalanche'
+    ? active.sort((a,b) => (Number(b.apr)||22.99) - (Number(a.apr)||22.99))
+    : active.sort((a,b) => Number(a.balance) - Number(b.balance))
+
+  const targetId = active[0].id || active[0].name
+
+  active.forEach(d => {
+    const r = (Number(d.apr)||22.99) / 100 / 12
+    const minInt = d.balance * r
+    const effectiveMin = Math.max(Number(d.minPay) || getMin(d.balance, Number(d.apr)), minInt + 1)
+    const isTarget = (d.id || d.name) === targetId
+    d.balance = d.balance * (1 + r)
+    const pay = Math.min(effectiveMin + (isTarget ? (extra || 0) : 0), d.balance)
+    d.balance = Math.max(0, d.balance - pay)
+    if (d.balance < 0.01) d.balance = 0
+  })
+
+  return copied
+}
+
+// ═══════════════════════════════════════
 //  REC CONTENT — returns {verdict, why, tradeoff}
 // ═══════════════════════════════════════
 function generateRecContent(extra, avaFull, snowFull, params) {
@@ -1486,7 +1534,6 @@ function recalculate() {
   if (!liveState) return
 
   const debts = liveState.debts
-  const extra = liveState.extra || 0
   const lumpSum = liveState.lumpSum || 0
   const income = liveState.budget.income
   const expenses = liveState.budget.expenses
@@ -1495,6 +1542,16 @@ function recalculate() {
   const totalDebt = debts.reduce((s,d) => s + Number(d.balance), 0)
   const totalMin = debts.reduce((s,d) => s + (Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))), 0)
   const available = income - expenses - obligations - totalMin
+
+  const sliderMax = Math.max(0, Math.floor(available / 25) * 25)
+  const sliderEl = document.getElementById('extra-slider')
+  sliderEl.max = sliderMax
+  if (liveState.extra > sliderMax) {
+    liveState.extra = sliderMax
+    sliderEl.value = sliderMax
+  }
+  const extra = liveState.extra || 0
+
   const dti = income > 0 ? Math.round(((totalMin + obligations) / income) * 100) : 0
   const ccDebts = debts.filter(d => d.type === 'cc' || !d.type)
   const totalBal = ccDebts.reduce((s,d) => s + Number(d.balance), 0)
@@ -1512,7 +1569,9 @@ function recalculate() {
   const snowFull = runSnowball(debtsSnow, extra)
   const intSavedAva = minimums.totalInterest - avaFull.totalInterest
   const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
-  const avaBetter = avaFull.totalInterest <= snowFull.totalInterest
+  const avaBetter = liveState.methodLocked
+    ? liveState.lockedMethod === 'avalanche'
+    : avaFull.totalInterest <= snowFull.totalInterest
   const recommendedRun = avaBetter ? avaFull : snowFull
   const intSavedRec = avaBetter ? intSavedAva : intSavedSnow
   const method = avaBetter ? 'avalanche' : 'snowball'
@@ -1568,9 +1627,15 @@ function recalculate() {
 
   // Plan cards
   _selectedMethod = method
-  document.getElementById('plan-method-label').textContent = 'Recommended method: ' + (avaBetter ? 'Avalanche' : 'Snowball')
+  document.getElementById('plan-method-label').textContent = (liveState.methodLocked ? 'Your locked method: ' : 'Recommended method: ') + (avaBetter ? 'Avalanche' : 'Snowball')
   const planSteps = generatePlan(debtsForPlan, extra, method)
-  renderPlanCards(planSteps, extra)
+  renderPlanCards(planSteps, extra, null, true)
+
+  // Progress bar
+  const totalMonthsForProgress = liveState.monthsCompleted + recMonths
+  const progressPct = totalMonthsForProgress > 0 ? Math.round((liveState.monthsCompleted / totalMonthsForProgress) * 100) : 0
+  document.getElementById('plan-progress-fill').style.width = progressPct + '%'
+  document.getElementById('plan-progress-label').textContent = liveState.monthsCompleted + ' of ' + totalMonthsForProgress + ' months tracked'
 
   // Milestones
   renderMilestones(planSteps, totalDebt)
@@ -1620,7 +1685,10 @@ function buildResults() {
     },
     creditScore: S.creditScore,
     extra: extraDefault,
-    lumpSum: 0
+    lumpSum: 0,
+    methodLocked: false,
+    lockedMethod: null,
+    monthsCompleted: 0,
   }
 
   const slider = document.getElementById('extra-slider')
@@ -1643,6 +1711,7 @@ function buildResults() {
   } catch(e) {}
 
   recalculate()
+  savePlannerProgressNow()
 }
 
 function pCard({name,desc,badge,badgeCls,best,metrics,creditPct,creditCol,creditTxt,planId,planHTML,consolidation}) {
@@ -1661,13 +1730,15 @@ function togglePlan(id) {
   lbl.textContent=open?'Hide payment plan':'Show my step-by-step payment plan'
 }
 
-function renderPlanCards(steps, extra, note) {
+function renderPlanCards(steps, extra, note, interactive) {
   extra = extra || 0
+  interactive = !!interactive
   const container = document.getElementById('plan-cards-container')
   container.innerHTML = note ? '<div style="background:#FFF8F6;border:1px solid rgba(255,77,46,0.25);border-radius:12px;padding:14px 16px;font-size:13px;color:#6B7280;margin-bottom:12px;line-height:1.6;">' + note + '</div>' : ''
   let phaseStart = 1
   let currentAccount = ''
   let currentPayment = 0
+  let isFirstCard = true
 
   steps.forEach(step => {
     if (step.type === 'start') {
@@ -1684,7 +1755,19 @@ function renderPlanCards(steps, extra, note) {
       const instructionText = step.nextName
         ? 'Pay the minimum on all other accounts. Once paid off, your payment on ' + step.nextName + ' becomes ' + fmt(nextPay) + '/mo.'
         : 'Pay the minimum on all other accounts. This is your final target. Once paid off, you are done.'
-      card.innerHTML = '<div class="phase-header"><span class="phase-months">' + monthRange + '</span><span class="phase-payment">' + fmt(currentPayment) + '/mo</span></div><div class="phase-account">' + currentAccount + '</div>' + rolloverHtml + '<div class="phase-instruction">' + instructionText + '</div>'
+
+      let checkboxHtml = ''
+      if (interactive && isFirstCard) {
+        const methodName = _selectedMethod === 'avalanche' ? 'avalanche' : 'snowball'
+        const alreadyLocked = liveState && liveState.methodLocked
+        const confirmText = alreadyLocked
+          ? 'Mark this month as paid and apply the payment to your real balances. This cannot be undone.'
+          : 'This will lock your plan to the <strong>' + methodName + '</strong> method and mark Month 1 as paid. This cannot be undone.'
+        checkboxHtml = '<div style="padding:10px 0 4px;"><div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Paid extra this month?</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;color:var(--muted);font-family:var(--mono);">$</span><input type="number" id="month-extra-input" min="0" placeholder="0" style="width:100px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:14px;font-family:var(--mono);color:var(--dark);outline:none;-moz-appearance:textfield;-webkit-appearance:none;" /></div></div><label class="month-check-row" for="month1-cb"><input type="checkbox" id="month1-cb" class="month-check-input" onchange="onMonthCheckboxClick(this)" /><span class="month-check-label">I made this month\'s payment</span></label><div class="month-confirm-panel" id="month-confirm" style="display:none;"><div class="month-confirm-text">' + confirmText + '</div><div class="month-confirm-btns"><button class="month-confirm-btn-yes" onclick="confirmFirstMonthLock()">Confirm and check off</button><button class="month-confirm-btn-no" onclick="dismissMonthConfirm()">Not yet</button></div></div>'
+      }
+      isFirstCard = false
+
+      card.innerHTML = '<div class="phase-header"><span class="phase-months">' + monthRange + '</span><span class="phase-payment">' + fmt(currentPayment) + '/mo</span></div><div class="phase-account">' + currentAccount + '</div>' + rolloverHtml + checkboxHtml + '<div class="phase-instruction">' + instructionText + '</div>'
       container.appendChild(card)
       phaseStart = step.month + 1
       if (step.nextName) {
@@ -1700,10 +1783,50 @@ function renderPlanCards(steps, extra, note) {
   })
 }
 
+function readMonthExtraInput() {
+  const el = document.getElementById('month-extra-input')
+  return el ? (Number(el.value) || 0) : 0
+}
+
+function onMonthCheckboxClick(el) {
+  if (!liveState) { if (el) el.checked = false; return }
+  if (liveState.methodLocked) {
+    applyMonthPayment(readMonthExtraInput())
+  } else {
+    const panel = document.getElementById('month-confirm')
+    if (panel) panel.style.display = 'block'
+  }
+}
+
+function dismissMonthConfirm() {
+  const panel = document.getElementById('month-confirm')
+  if (panel) panel.style.display = 'none'
+  const cb = document.getElementById('month1-cb')
+  if (cb) cb.checked = false
+}
+
+function confirmFirstMonthLock() {
+  if (!liveState) return
+  liveState.methodLocked = true
+  liveState.lockedMethod = _selectedMethod
+  const panel = document.getElementById('month-confirm')
+  if (panel) panel.style.display = 'none'
+  applyMonthPayment(readMonthExtraInput())
+}
+
+function applyMonthPayment(oneTimeExtra = 0) {
+  if (!liveState) return
+  liveState.debts = advanceOneMonth(liveState.debts, liveState.extra + oneTimeExtra, liveState.lockedMethod)
+  liveState.monthsCompleted += 1
+  recalculate()
+  savePlannerProgressNow()
+}
+
 function onSliderInput() {
   if (!liveState) return
   liveState.extra = Number(document.getElementById('extra-slider').value)
   recalculate()
+  savePlannerProgressDebounced()
 }
 
 let _lumpDebounce = null
@@ -1756,6 +1879,7 @@ function finishEdit(el, newVal, field, id) {
   el.innerHTML = ''
   el.textContent = fmt(newVal)
   recalculate()
+  savePlannerProgressNow()
 }
 
 function populateCompareModal(compareData) {
@@ -1781,6 +1905,7 @@ function openCompare() {
 function closeCompare() {
   document.getElementById('compare-modal').classList.remove('open')
   document.body.style.overflow = ''
+  recalculate()
 }
 
 function selectMethod(key) {
@@ -1824,7 +1949,7 @@ function selectMethod(key) {
     document.getElementById('stat-date').textContent = fmtDate(avaFull.months)
     document.getElementById('stat-saved').textContent = fmt(intSavedAva)
     document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
-    renderPlanCards(generatePlan(debtsAva, extra, 'avalanche'), extra)
+    renderPlanCards(generatePlan(debtsAva, extra, 'avalanche'), extra, null, false)
 
   } else if (key === 'snowball') {
     const sortedForFirst = [...debts].sort((a,b) => Number(a.balance)-Number(b.balance))
@@ -1836,7 +1961,7 @@ function selectMethod(key) {
     document.getElementById('stat-date').textContent = fmtDate(snowFull.months)
     document.getElementById('stat-saved').textContent = fmt(intSavedSnow)
     document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
-    renderPlanCards(generatePlan(debtsSnow, extra, 'snowball'), extra)
+    renderPlanCards(generatePlan(debtsSnow, extra, 'snowball'), extra, null, false)
 
   } else if (key === 'minimums') {
     const sortedForFirst = [...debts].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
@@ -1847,7 +1972,7 @@ function selectMethod(key) {
     document.getElementById('stat-date').textContent = fmtDate(minimums.months)
     document.getElementById('stat-saved').textContent = '--'
     document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
-    renderPlanCards(generatePlan(debts, 0, avaBetter ? 'avalanche' : 'snowball'), 0, 'This path costs the most in interest. No extra payment applied.')
+    renderPlanCards(generatePlan(debts, 0, avaBetter ? 'avalanche' : 'snowball'), 0, 'This path costs the most in interest. No extra payment applied.', false)
 
   } else if (key === 'consolidation') {
     const odds = getConsolidationOdds(liveState.creditScore, totalUtil)
@@ -1870,6 +1995,88 @@ function selectMethod(key) {
   }
 }
 
+
+// ═══════════════════════════════════════
+//  HYDRATE FROM SAVED PROGRESS
+// ═══════════════════════════════════════
+function hydrateAndShowResults(progress) {
+  const totalDebt = progress.debts.reduce((s, d) => s + Number(d.balance), 0)
+  const coFee = Math.round(totalDebt * 0.25)
+  const youKeep = coFee - 249
+  calcD = { coFee, youKeep }
+
+  liveState = {
+    debts: progress.debts,
+    budget: progress.budget,
+    creditScore: progress.credit_score,
+    extra: progress.extra,
+    lumpSum: 0,
+    methodLocked: progress.method_locked,
+    lockedMethod: progress.locked_method,
+    monthsCompleted: progress.months_completed,
+  }
+
+  const totalMin = progress.debts.reduce((s, d) => s + (Number(d.minPay) || getMin(Number(d.balance), Number(d.apr))), 0)
+  const available = progress.budget.income - progress.budget.expenses - progress.budget.obligations - totalMin
+  const sliderMax = Math.max(0, Math.floor(available / 25) * 25)
+
+  const slider = document.getElementById('extra-slider')
+  slider.max = sliderMax
+  slider.value = Math.min(progress.extra, sliderMax)
+  document.getElementById('lump-input').value = ''
+  document.getElementById('lump-input').oninput = onLumpInput
+
+  renderAccountsSummary()
+  recalculate()
+  go('s-results', 6)
+}
+
+// ═══════════════════════════════════════
+//  SERVER-SIDE PROGRESS PERSISTENCE
+// ═══════════════════════════════════════
+let _progressDebounce = null
+
+function _buildProgressPayload() {
+  const session = JSON.parse(localStorage.getItem('planner_session') || 'null')
+  const token = session && session.token
+  if (!token || !liveState) return null
+  return {
+    session_token: token,
+    debts: liveState.debts,
+    extra: liveState.extra,
+    budget: liveState.budget,
+    credit_score: liveState.creditScore,
+    method_locked: liveState.methodLocked,
+    locked_method: liveState.lockedMethod,
+    months_completed: liveState.monthsCompleted,
+  }
+}
+
+async function _postProgress() {
+  const payload = _buildProgressPayload()
+  if (!payload) return
+  const res = await fetch('/.netlify/functions/planner-progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error('save failed')
+}
+
+async function savePlannerProgressNow() {
+  try {
+    await _postProgress()
+  } catch(e) {
+    setTimeout(async () => {
+      try { await _postProgress() } catch(e2) { console.error('Progress save failed:', e2) }
+    }, 3000)
+  }
+}
+
+function savePlannerProgressDebounced() {
+  clearTimeout(_progressDebounce)
+  _progressDebounce = setTimeout(() => savePlannerProgressNow(), 400)
+}
 
 // PDF generation removed
 // ═══════════════════════════════════════
@@ -2120,8 +2327,24 @@ function dismissResume() {
 document.addEventListener('input', saveProgress)
 document.addEventListener('change', saveProgress)
 
-// Check for saved progress on load
-window.addEventListener('load', checkForSavedProgress)
+// Check for saved progress on load — try server first, fall back to localStorage
+window.addEventListener('load', async () => {
+  try {
+    const session = JSON.parse(localStorage.getItem('planner_session') || 'null')
+    const token = session && session.token
+    if (token) {
+      const res = await fetch('/.netlify/functions/planner-progress?session_token=' + encodeURIComponent(token))
+      if (res.ok) {
+        const json = await res.json()
+        if (json.exists) {
+          hydrateAndShowResults(json.progress)
+          return
+        }
+      }
+    }
+  } catch(e) {}
+  checkForSavedProgress()
+})
 
 // ═══════════════════════════════════════
 //  RESTART
