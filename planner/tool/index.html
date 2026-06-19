@@ -611,6 +611,14 @@
         <input class="amount-inp" type="number" id="paycheck-amt" placeholder="0" min="0" oninput="updatePaycheck()" />
       </div>
       <div class="monthly-equiv" id="monthly-equiv"></div>
+      <div style="margin-top:14px;">
+        <div class="budget-q-title" style="font-size:15px;margin-bottom:4px;">Gross pay for that same paycheck <span style="font-weight:400;color:var(--muted);">(optional)</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6;">Only used to calculate your debt-to-income ratio the way lenders do. Check your pay stub if you're not sure — totally fine to skip.</div>
+        <div class="amount-inp-wrap">
+          <span class="amount-prefix">$</span>
+          <input class="amount-inp" type="number" id="gross-paycheck-amt" placeholder="0" min="0" oninput="S.grossPaycheckAmt=Number(this.value)||0;updatePaycheck()" />
+        </div>
+      </div>
     </div>
 
     <!-- Expense categories -->
@@ -712,7 +720,7 @@
     <!-- DTI -->
     <div class="dti-row" style="margin-top:16px;">
       <div class="dti-box">
-        <div><div class="dti-lbl">Debt-to-income ratio</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Lenders prefer under 36%</div></div>
+        <div><div class="dti-lbl">Debt-to-income ratio</div><div id="ul-dti-caption" style="font-size:11px;color:var(--muted);margin-top:2px;">Lenders prefer under 36%</div></div>
         <div class="dti-val" id="ul-dti"></div>
       </div>
     </div>
@@ -867,7 +875,7 @@
 //  STATE
 // ═══════════════════════════════════════
 const S = {
-  debts: [], obligations: [], creditScore: '', paycheckFreq: '', paycheckAmt: 0,
+  debts: [], obligations: [], creditScore: '', paycheckFreq: '', paycheckAmt: 0, grossPaycheckAmt: 0, grossMonthlyIncome: 0,
   monthlyIncome: 0, housing: 0, bills: 0, transport: 0, groceries: 0, dining: 0, other: 0,
 }
 let debtCtr = 0
@@ -1112,6 +1120,9 @@ function updatePaycheck() {
     document.getElementById('monthly-equiv').textContent=''
     document.getElementById('budget-ack').textContent=''
   }
+  S.grossMonthlyIncome = (S.grossPaycheckAmt > 0 && S.paycheckFreq)
+    ? Math.round(S.grossPaycheckAmt * FREQ_MULT[S.paycheckFreq])
+    : 0
   checkBudgetReady()
 }
 
@@ -1289,7 +1300,9 @@ function calculate() {
   const totalOblig=S.obligations.reduce((s,o)=>s+(Number(o.amount)||0),0)
   const totalExp=S.housing+S.bills+S.transport+S.groceries+(S.dining||0)+S.other
   const available=S.monthlyIncome-totalExp-totalOblig-totalMin
-  const dti=S.monthlyIncome>0?Math.round(((totalMin+totalOblig)/S.monthlyIncome)*100):0
+  const dtiBasis = S.grossMonthlyIncome > 0 ? 'gross' : 'net'
+  const dtiBase = dtiBasis === 'gross' ? S.grossMonthlyIncome : S.monthlyIncome
+  const dti=dtiBase>0?Math.round(((totalMin+totalOblig)/dtiBase)*100):0
 
   // Utilization
   const ccDebts=valid.filter(d=>d.type==='cc'||!d.type)
@@ -1305,7 +1318,7 @@ function calculate() {
   const avalanche=runAvalanche(valid,0)
   const snowball=runSnowball(valid,0)
 
-  calcD={valid,totalDebt,totalMin,totalOblig,totalExp,available,dti,totalUtil,ccDebts,highestApr,coFee,youKeep,minimums,avalanche,snowball}
+  calcD={valid,totalDebt,totalMin,totalOblig,totalExp,available,dti,dtiBasis,totalUtil,ccDebts,highestApr,coFee,youKeep,minimums,avalanche,snowball}
 
   // Cost of nothing animation
   animateTicker(minimums.totalInterest)
@@ -1333,7 +1346,7 @@ function animateTicker(target) {
 //  BUILD UNLOCK SCREEN
 // ═══════════════════════════════════════
 function buildUnlock() {
-  const {available,dti,totalUtil,ccDebts,totalMin,totalExp,totalOblig} = calcD
+  const {available,dti,dtiBasis,totalUtil,ccDebts,totalMin,totalExp,totalOblig} = calcD
   document.getElementById('ul-income').textContent=fmt(S.monthlyIncome)
   document.getElementById('ul-expenses').textContent=fmt(totalExp)
   document.getElementById('ul-oblig').textContent=totalOblig>0?fmt(totalOblig):'$0'
@@ -1347,6 +1360,10 @@ function buildUnlock() {
   const dtiEl=document.getElementById('ul-dti')
   dtiEl.textContent=dti+'%'
   dtiEl.style.color=dti<=36?'var(--green)':dti<=50?'var(--amber)':'var(--red)'
+  const dtiCaption = document.getElementById('ul-dti-caption')
+  if (dtiCaption) dtiCaption.textContent = dtiBasis === 'gross'
+    ? 'Calculated using your gross income, the same way lenders do.'
+    : 'Estimated using your take-home pay since gross income wasn\'t provided — your real ratio is likely a bit lower than this.'
 
   // Per-card utilization
   const utilSec=document.getElementById('ul-util-section')
