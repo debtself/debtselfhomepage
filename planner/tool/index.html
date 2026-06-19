@@ -873,8 +873,9 @@ function addDebt() {
     </div>
     <div class="type-toggle">
       <button class="type-btn active" id="${id}-cc" onclick="setType('${id}','cc',this)">Credit Card</button>
-      <button class="type-btn" id="${id}-loan" onclick="setType('${id}','loan',this)">Loan</button>
+      <button class="type-btn" id="${id}-loan" onclick="setType('${id}','loan',this)">Personal Loan</button>
     </div>
+    <div id="${id}-loan-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;">Unsecured loans only — personal loans, medical debt, etc. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
     <div class="fl" style="margin-bottom:8px;">
       <div class="fl-lbl">Account name</div>
       <input class="fl-inp" type="text" placeholder="e.g. Chase Sapphire" style="font-family:var(--sans);font-size:15px;" oninput="updD('${id}','name',this.value)" />
@@ -908,6 +909,7 @@ function setType(id, type, btn) {
       <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value)" /></div>
     `
     document.getElementById(id+'-util').style.display='block'
+    const hint=document.getElementById(id+'-loan-hint'); if(hint) hint.style.display='none'
   } else {
     fields.innerHTML=`
       <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="12000" min="0" oninput="updD('${id}','balance',this.value);checkDebtReady()" /></div>
@@ -925,6 +927,7 @@ function setType(id, type, btn) {
       </div>
     `
     document.getElementById(id+'-util').style.display='none'
+    const hint=document.getElementById(id+'-loan-hint'); if(hint) hint.style.display='block'
   }
 }
 
@@ -2014,8 +2017,9 @@ function resumeProgress() {
           </div>
           <div class="type-toggle">
             <button class="type-btn ${!isLoan?'active':''}" id="${d.id}-cc" onclick="setType('${d.id}','cc',this)">Credit Card</button>
-            <button class="type-btn ${isLoan?'active':''}" id="${d.id}-loan" onclick="setType('${d.id}','loan',this)">Loan</button>
+            <button class="type-btn ${isLoan?'active':''}" id="${d.id}-loan" onclick="setType('${d.id}','loan',this)">Personal Loan</button>
           </div>
+          <div id="${d.id}-loan-hint" style="display:${isLoan?'block':'none'};font-size:11px;color:var(--muted);margin-top:6px;">Unsecured loans only — personal loans, medical debt, etc. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
           <div class="fl" style="margin-bottom:8px;">
             <div class="fl-lbl">Account name</div>
             <input class="fl-inp" type="text" value="${d.name||''}" style="font-family:var(--sans);font-size:15px;" oninput="updD('${d.id}','name',this.value)" />
