@@ -903,8 +903,8 @@ function go(id, step) {
 //  FORMAT
 // ═══════════════════════════════════════
 function fmt(n) { if(!n||isNaN(n)) return '$0'; return '$'+Math.round(n).toLocaleString('en-US') }
-function fmtDate(m) { 
-  if(!m||m<=0||m>600) return '50+ years'
+function fmtDate(m) {
+  if(m==null||isNaN(m)||m<0||m>600) return '50+ years'
   const d=new Date()
   d.setMonth(d.getMonth()+Math.round(m))
   return d.toLocaleDateString('en-US',{month:'short',year:'numeric'})
@@ -1362,9 +1362,7 @@ function buildUnlock() {
   // DTI
   const dtiEl=document.getElementById('ul-dti')
   dtiEl.textContent=dti+'%'
-  dtiEl.style.color = available < 300
-    ? (dti <= 50 ? 'var(--amber)' : 'var(--red)')
-    : (dti <= 36 ? 'var(--green)' : dti <= 50 ? 'var(--amber)' : 'var(--red)')
+  dtiEl.style.color = dti <= 50 ? 'var(--amber)' : 'var(--red)'
   const dtiCaption = document.getElementById('ul-dti-caption')
   if (dtiCaption) dtiCaption.textContent = dtiBasis === 'gross'
     ? 'Calculated using your gross income, the same way lenders do.'
@@ -1473,6 +1471,13 @@ function advanceOneMonth(debts, extra, method) {
 // ═══════════════════════════════════════
 function generateRecContent(extra, avaFull, snowFull, params) {
   const {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore} = params
+  if (totalDebt <= 0) {
+    return {
+      verdict: 'You\'re debt free. There\'s nothing left to plan for here.',
+      why: 'Every account is paid off — the minimum payments, the interest, the whole calculation, none of it applies anymore. This is the result of everything you tracked.',
+      tradeoff: ''
+    }
+  }
   const intSavedAva = minimums.totalInterest - avaFull.totalInterest
   const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
   const avaBetter = avaFull.totalInterest <= snowFull.totalInterest
