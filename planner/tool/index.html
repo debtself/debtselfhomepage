@@ -101,6 +101,7 @@
     .fl-sel { background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:10px 11px; font-size:15px; font-family:var(--sans); color:var(--dark); outline:none; width:100%; -webkit-appearance:none; }
     .fl-sel:focus { border-color:var(--red); }
     .util-bar-wrap { margin-top:8px; display:none; }
+    .debt-preview { font-size:11px; color:var(--muted); line-height:1.6; margin-top:8px; }
     .util-bar-lbl { font-size:11px; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
     .util-track { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
     .util-fill { height:100%; border-radius:3px; transition:width .3s,background .3s; }
@@ -906,7 +907,7 @@ function pct(n) { return Math.round(n)+'%' }
 function addDebt() {
   debtCtr++
   const id='d'+debtCtr
-  S.debts.push({id,type:'cc',name:'',balance:'',limit:'',apr:'',minPay:'',term:''})
+  S.debts.push({id,type:'cc',name:'',balance:'',limit:'',apr:'',minPay:''})
   const el=document.createElement('div')
   el.className='dcard'; el.id=id
   el.innerHTML=`
@@ -924,11 +925,12 @@ function addDebt() {
       <input class="fl-inp" type="text" placeholder="e.g. Chase Sapphire" style="font-family:var(--sans);font-size:15px;" oninput="updD('${id}','name',this.value)" />
     </div>
     <div class="grid2" id="${id}-fields">
-      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="8500" min="0" oninput="updD('${id}','balance',this.value);updateUtil('${id}');checkDebtReady()" /></div>
+      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="8500" min="0" oninput="updD('${id}','balance',this.value);updateUtil('${id}');updateDebtPreview('${id}');checkDebtReady()" /></div>
       <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" placeholder="10000" min="0" oninput="updD('${id}','limit',this.value);updateUtil('${id}')" /></div>
-      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value)" /></div>
-      <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value)" /></div>
+      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value);updateDebtPreview('${id}')" /></div>
+      <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value);updateDebtPreview('${id}')" /></div>
     </div>
+    <div class="debt-preview" id="${id}-preview"></div>
     <div class="util-bar-wrap" id="${id}-util">
       <div class="util-bar-lbl"><span>Credit utilization</span><span id="${id}-upct">—</span></div>
       <div class="util-track"><div class="util-fill" id="${id}-ufill" style="width:0%;background:var(--green)"></div></div>
@@ -946,29 +948,21 @@ function setType(id, type, btn) {
   const fields=document.getElementById(id+'-fields')
   if(type==='cc') {
     fields.innerHTML=`
-      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="8500" min="0" oninput="updD('${id}','balance',this.value);updateUtil('${id}');checkDebtReady()" /></div>
+      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="8500" min="0" oninput="updD('${id}','balance',this.value);updateUtil('${id}');updateDebtPreview('${id}');checkDebtReady()" /></div>
       <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" placeholder="10000" min="0" oninput="updD('${id}','limit',this.value);updateUtil('${id}')" /></div>
-      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value)" /></div>
-      <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value)" /></div>
+      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value);updateDebtPreview('${id}')" /></div>
+      <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value);updateDebtPreview('${id}')" /></div>
     `
+    const preview=document.getElementById(id+'-preview'); if(preview) preview.textContent=''
     document.getElementById(id+'-util').style.display='block'
     const hint=document.getElementById(id+'-loan-hint'); if(hint) hint.style.display='none'
   } else {
     fields.innerHTML=`
-      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="12000" min="0" oninput="updD('${id}','balance',this.value);checkDebtReady()" /></div>
-      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="8.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value)" /></div>
-      <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" placeholder="350" min="0" oninput="updD('${id}','minPay',this.value)" /></div>
-      <div class="fl"><div class="fl-lbl">Months remaining</div>
-        <select class="fl-sel" oninput="updD('${id}','term',this.value)">
-          <option value="">Select</option>
-          <option value="6">6 months</option><option value="12">12 months</option>
-          <option value="18">18 months</option><option value="24">24 months</option>
-          <option value="36">36 months</option><option value="48">48 months</option>
-          <option value="60">60 months</option><option value="72">72 months</option>
-          <option value="84">84 months</option>
-        </select>
-      </div>
+      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="12000" min="0" oninput="updD('${id}','balance',this.value);updateDebtPreview('${id}');checkDebtReady()" /></div>
+      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="8.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value);updateDebtPreview('${id}')" /></div>
+      <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" placeholder="350" min="0" oninput="updD('${id}','minPay',this.value);updateDebtPreview('${id}')" /></div>
     `
+    const preview=document.getElementById(id+'-preview'); if(preview) preview.textContent=''
     document.getElementById(id+'-util').style.display='none'
     const hint=document.getElementById(id+'-loan-hint'); if(hint) hint.style.display='block'
   }
@@ -993,6 +987,24 @@ function updateUtil(id) {
   fill.style.background=u<=30?'var(--green)':u<=50?'#F59E0B':'var(--red)'
   upct.textContent=Math.round(u)+'%'
   upct.style.color=u<=30?'var(--green)':u<=50?'var(--amber)':'var(--red)'
+}
+
+function updateDebtPreview(id) {
+  const d = S.debts.find(x => x.id === id)
+  const el = document.getElementById(id + '-preview')
+  if (!el) return
+  const bal = Number(d && d.balance)
+  const apr = Number(d && d.apr)
+  const minPay = Number(d && d.minPay)
+  if (!d || bal <= 0 || !apr || !minPay) { el.textContent = ''; return }
+  const monthlyInterest = bal * (apr / 100 / 12)
+  if (minPay <= monthlyInterest) {
+    const needed = Math.ceil(monthlyInterest) + 1
+    el.textContent = 'At ' + fmt(minPay) + '/mo, this balance will never go down — interest alone is ' + fmt(Math.ceil(monthlyInterest)) + '/mo. You need at least ' + fmt(needed) + '/mo just to make progress.'
+  } else {
+    const result = runMinimums([{balance: bal, apr: apr, minPay: minPay}])
+    el.textContent = 'At ' + fmt(minPay) + '/mo, this account pays off in about ' + fmtYrs(result.months) + ' and costs ' + fmt(result.totalInterest) + ' in interest if nothing changes.'
+  }
 }
 
 function removeDebt(id) {
@@ -2350,22 +2362,17 @@ function resumeProgress() {
           </div>
           <div class="grid2" id="${d.id}-fields">
             ${isLoan ? `
-              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);checkDebtReady()" /></div>
-              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value)" /></div>
-              <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value)" /></div>
-              <div class="fl"><div class="fl-lbl">Months remaining</div>
-                <select class="fl-sel" oninput="updD('${d.id}','term',this.value)">
-                  <option value="">Select</option>
-                  ${[6,12,18,24,36,48,60,72,84].map(m=>`<option value="${m}" ${d.term==m?'selected':''}>${m} months</option>`).join('')}
-                </select>
-              </div>
+              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);updateDebtPreview('${d.id}');checkDebtReady()" /></div>
+              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value);updateDebtPreview('${d.id}')" /></div>
+              <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value);updateDebtPreview('${d.id}')" /></div>
             ` : `
-              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);updateUtil('${d.id}');checkDebtReady()" /></div>
+              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);updateUtil('${d.id}');updateDebtPreview('${d.id}');checkDebtReady()" /></div>
               <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" value="${d.limit||''}" min="0" oninput="updD('${d.id}','limit',this.value);updateUtil('${d.id}')" /></div>
-              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value)" /></div>
-              <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value)" /></div>
+              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value);updateDebtPreview('${d.id}')" /></div>
+              <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value);updateDebtPreview('${d.id}')" /></div>
             `}
           </div>
+          <div class="debt-preview" id="${d.id}-preview"></div>
           <div class="util-bar-wrap" id="${d.id}-util" style="display:${!isLoan&&Number(d.limit)>0&&Number(d.balance)>0?'block':'none'}">
             <div class="util-bar-lbl"><span>Credit utilization</span><span id="${d.id}-upct"></span></div>
             <div class="util-track"><div class="util-fill" id="${d.id}-ufill" style="width:0%;background:var(--green)"></div></div>
@@ -2373,6 +2380,7 @@ function resumeProgress() {
         `
         document.getElementById('debt-cards').appendChild(el)
         if (!isLoan) updateUtil(d.id)
+        updateDebtPreview(d.id)
       })
       updateBadge(); checkDebtReady()
     }
