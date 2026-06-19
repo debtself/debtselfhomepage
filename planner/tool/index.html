@@ -791,7 +791,7 @@
         <div class="res-stat-val" id="stat-date"></div>
       </div>
       <div class="res-stat">
-        <div class="res-stat-lbl">Interest saved</div>
+        <div class="res-stat-lbl" id="stat-saved-lbl">Interest saved</div>
         <div class="res-stat-val res-stat-red" id="stat-saved"></div>
       </div>
       <div class="res-stat">
@@ -1362,9 +1362,9 @@ function buildUnlock() {
 
   // Unlock headline
   let headline='Here is exactly where your money goes.'
-  if(available>500) headline='You have real room to accelerate your payoff. Here is how.'
-  else if(available>0) headline='You have some breathing room. Here is what that unlocks.'
-  else if(available===0) headline='Your income and expenses are balanced. Here is the honest picture.'
+  if(available>=500) headline='You have real room to accelerate your payoff. Here is how.'
+  else if(available>=300) headline='You have some breathing room, though not a lot. Here is what that unlocks.'
+  else if(available>0) headline='Your budget is tight right now. Here is the honest picture.'
   else headline='Your expenses are outpacing your income. Here is what needs to change.'
   document.getElementById('unlock-headline').textContent=headline
 
@@ -1373,8 +1373,8 @@ function buildUnlock() {
   const vt=document.getElementById('verdict-title')
   const vtx=document.getElementById('verdict-text')
   if(available>=500){vb.className='verdict-box positive';vt.textContent='Avalanche or snowball is fully executable';vtx.textContent='You have '+fmt(available)+' available above your minimum payments each month. You can fully execute either payoff method right now. The avalanche plan with extra payments will get you out the fastest.'}
-  else if(available>0){vb.className='verdict-box positive';vt.textContent='Payoff is executable at a reduced pace';vtx.textContent='You have '+fmt(available)+' left after expenses and minimums. Not a lot of room to accelerate but the payoff methods are still executable. Even '+fmt(Math.min(available,100))+' per month extra makes a meaningful difference over time.'}
-  else if(available>-200){vb.className='verdict-box warning';vt.textContent='Very tight. Settlement is worth understanding.';vtx.textContent='After expenses and minimum payments your budget is nearly balanced or in slight deficit. This is the situation where understanding debt settlement as an alternative is worth your time. It reduces the principal you owe not just the interest rate.'}
+  else if(available>=300){vb.className='verdict-box positive';vt.textContent='Payoff is executable, though acceleration will be modest';vtx.textContent='You have '+fmt(available)+' left after expenses and minimums. There is real room to make progress but not a lot of room to accelerate. Even '+fmt(Math.min(available,100))+' per month extra makes a meaningful difference over time.'}
+  else if(available>0){vb.className='verdict-box warning';vt.textContent='Your budget is too tight for payoff alone — settlement is worth understanding';vtx.textContent='With only '+fmt(available)+' left after expenses and minimums, accelerating payoff will be difficult. This is the situation where understanding debt settlement as an alternative is worth your time. Settlement reduces the principal you owe, not just the interest rate. That is a fundamentally different outcome than any payoff plan.'}
   else{vb.className='verdict-box negative';vt.textContent='Your expenses are outpacing your income right now.';vtx.textContent='Your current expenses exceed your income by '+fmt(Math.abs(available))+' per month. Minimum payments alone are not sustainable. Settlement or consolidation needs to be part of your plan. Review your expense categories for any immediate reductions.'}
 }
 
@@ -1670,6 +1670,7 @@ function recalculate(animateDate = false) {
   } else {
     statDateEl.textContent = newDateText
   }
+  document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
   document.getElementById('stat-saved').textContent = fmt(intSavedRec)
   document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
 
@@ -2007,6 +2008,16 @@ function finishEdit(el, newVal, field, id) {
   savePlannerProgressNow()
 }
 
+function calculateSettlementEstimate(totalDebt) {
+  const settlementTarget = totalDebt * 0.5
+  const companyFee = totalDebt * 0.25
+  const standardMonths = 48
+  const companyMonthlyPayment = (settlementTarget + companyFee) / standardMonths
+  const debtselfFastMonths = Math.ceil(settlementTarget / companyMonthlyPayment)
+  const debtselfLowPayment = settlementTarget / standardMonths
+  return { settlementTarget, companyFee, companyMonthlyPayment, standardMonths, debtselfFastMonths, debtselfLowPayment }
+}
+
 function populateCompareModal(compareData) {
   _compareData = compareData
   const container = document.getElementById('compare-modal-rows')
@@ -2071,6 +2082,7 @@ function selectMethod(key) {
     document.getElementById('rec-verdict').textContent = rec.verdict
     document.getElementById('rec-why').textContent = rec.why
     document.getElementById('rec-tradeoff').textContent = rec.tradeoff
+    document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
     document.getElementById('stat-date').textContent = fmtDate(avaFull.months)
     document.getElementById('stat-saved').textContent = fmt(intSavedAva)
     document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
@@ -2083,6 +2095,7 @@ function selectMethod(key) {
     document.getElementById('rec-verdict').textContent = rec.verdict
     document.getElementById('rec-why').textContent = rec.why
     document.getElementById('rec-tradeoff').textContent = rec.tradeoff
+    document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
     document.getElementById('stat-date').textContent = fmtDate(snowFull.months)
     document.getElementById('stat-saved').textContent = fmt(intSavedSnow)
     document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
@@ -2094,6 +2107,7 @@ function selectMethod(key) {
     document.getElementById('rec-verdict').textContent = 'Minimum payments only. The most expensive path.'
     document.getElementById('rec-why').textContent = 'No extra payment applied. Each account is paid at its entered minimum until the balance reaches zero. At this pace you are debt free by ' + fmtDate(minimums.months) + ' and pay ' + fmt(minimums.totalInterest) + ' in total interest.'
     document.getElementById('rec-tradeoff').textContent = 'This path costs the most in interest and takes the longest. Consider even a small extra payment to accelerate your timeline.'
+    document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
     document.getElementById('stat-date').textContent = fmtDate(minimums.months)
     document.getElementById('stat-saved').textContent = '--'
     document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
@@ -2104,18 +2118,21 @@ function selectMethod(key) {
     document.getElementById('rec-verdict').textContent = odds.label + ': ' + odds.rate
     document.getElementById('rec-why').textContent = odds.text
     document.getElementById('rec-tradeoff').textContent = ''
+    document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
     document.getElementById('stat-date').textContent = odds.label
     document.getElementById('stat-saved').textContent = odds.rate || '--'
     document.getElementById('stat-payment').textContent = '--'
     planContainer.innerHTML = '<div class="odds-box ' + odds.level + '"><div class="odds-title">' + odds.label + ': ' + odds.rate + '</div><div class="odds-text">' + odds.text + '</div></div>'
 
   } else if (key === 'settlement') {
+    const s = calculateSettlementEstimate(totalDebt)
     document.getElementById('rec-verdict').textContent = 'Debt settlement reduces the principal you owe, not just the interest rate.'
-    document.getElementById('rec-why').textContent = 'Settlement companies charge roughly 25% of enrolled debt to manage the process. debtself gives you the same tools for $249 flat. Typical settlement resolves debt for 40 to 60 cents on the dollar, often in 6 to 48 months.'
+    document.getElementById('rec-why').textContent = 'A traditional settlement company would charge around ' + fmt(s.companyMonthlyPayment) + '/mo over the standard ' + s.standardMonths + '-month program. debtself doesn\'t take a percentage of your payments, so you can keep that same payment and be debt-free in about ' + s.debtselfFastMonths + ' months instead, or keep your payment lower at about ' + fmt(s.debtselfLowPayment) + '/mo and still finish in the same ' + s.standardMonths + ' months.'
     document.getElementById('rec-tradeoff').textContent = 'Settlement affects your credit score during the process. The trade-off is a lower total amount paid versus a period of credit impact.'
-    document.getElementById('stat-date').textContent = '6 to 48 months'
-    document.getElementById('stat-saved').textContent = fmt(youKeep) + ' in fees'
-    document.getElementById('stat-payment').textContent = 'Varies'
+    document.getElementById('stat-saved-lbl').textContent = 'You keep'
+    document.getElementById('stat-date').textContent = s.standardMonths + ' months'
+    document.getElementById('stat-saved').textContent = fmt(youKeep)
+    document.getElementById('stat-payment').textContent = fmt(s.debtselfLowPayment) + '/mo'
     planContainer.innerHTML = '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process: word-for-word scripts, creditor intelligence, and a full settlement platform, for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>'
   }
 }
