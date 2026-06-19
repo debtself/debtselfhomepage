@@ -62,7 +62,7 @@ function buildEmail(email, debt_amount, assessment) {
 
           <div style="background:#FFFFFF;border-radius:16px;padding:32px;border:1px solid #E8E4DC;">
           <div style="background:#0A0E12;padding:16px 24px;border-radius:10px 10px 0 0;margin:-32px -32px 24px -32px;">
-  <img src="https://debtself.com/assets/light-wordmark.png" alt="debt/self" style="height:28px;display:block;margin-bottom:8px;" />
+  <img src="https://debtself.com/assets/dark-wordmark.png" alt="debt/self" style="height:28px;display:block;margin-bottom:8px;" />
 </div>
             <div style="font-size:11px;font-weight:700;color:#FF4D2E;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:12px;">Your plan</div>
             <div style="font-size:22px;font-weight:700;color:#0A0E12;margin-bottom:8px;">Here's a copy of your debt freedom plan.</div>
