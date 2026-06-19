@@ -792,6 +792,9 @@
       <div class="rec-tradeoff" id="rec-tradeoff"></div>
     </div>
 
+    <div id="ds-wrap-early"></div>
+    <div id="secondary-payoff-header" class="res-section-eyebrow"></div>
+
     <!-- BLOCK 3: THREE KEY NUMBERS -->
     <div class="res-stats">
       <div class="res-stat">
@@ -1726,7 +1729,10 @@ function recalculate(animateDate = false) {
   populateCompareModal(compareData)
 
   // CTA
-  document.getElementById('ds-wrap').innerHTML = showSettlement ? '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process: word-for-word scripts, creditor intelligence, and a full settlement platform, for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>' : ''
+  const ctaHtml = '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process: word-for-word scripts, creditor intelligence, and a full settlement platform, for $249 flat. Worth knowing before you sign with anyone.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>'
+  document.getElementById('ds-wrap-early').innerHTML = showSettlement ? ctaHtml : ''
+  document.getElementById('ds-wrap').innerHTML = ''
+  document.getElementById('secondary-payoff-header').textContent = showSettlement ? 'IF YOU STILL WANT TO SEE THE PAYOFF MATH' : ''
 
   // Snapshot for email
   window._plannerSnapshot = {
