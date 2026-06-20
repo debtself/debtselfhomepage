@@ -1657,6 +1657,7 @@ function recalculate(animateDate = false) {
     : avaFull.totalInterest <= snowFull.totalInterest
   const recommendedRun = avaBetter ? avaFull : snowFull
   const showSettlement = (recommendedRun.months >= 60 || available < 200) && liveState.creditScore !== 'excellent'
+  const recMode = available < 0 ? 'deficit' : showSettlement ? 'settlement' : showConsolidation ? 'consolidation' : 'payoff'
   const intSavedRec = avaBetter ? intSavedAva : intSavedSnow
   const method = avaBetter ? 'avalanche' : 'snowball'
   const debtsForPlan = avaBetter ? debtsAva : debtsSnow
@@ -1688,7 +1689,7 @@ function recalculate(animateDate = false) {
   const diffText = yrs > 0 && mos > 0 ? yrs + ' yr ' + mos + ' mo sooner' : yrs > 0 ? yrs + ' year' + (yrs>1?'s':'') + ' sooner' : mos > 0 ? mos + ' month' + (mos>1?'s':'') + ' sooner' : ''
   document.getElementById('contrast-min-date').textContent = fmtDate(minMonths)
   document.getElementById('contrast-min-int').textContent = fmt(minimums.totalInterest) + ' in interest'
-  document.getElementById('contrast-rec-label').textContent = showSettlement ? 'WITHOUT SETTLEMENT' : showConsolidation ? 'WITHOUT CONSOLIDATION' : 'YOUR PLAN'
+  document.getElementById('contrast-rec-label').textContent = (recMode === 'deficit' || recMode === 'settlement') ? 'WITHOUT SETTLEMENT' : recMode === 'consolidation' ? 'WITHOUT CONSOLIDATION' : 'YOUR PLAN'
   document.getElementById('contrast-rec-date').textContent = fmtDate(recMonths)
   document.getElementById('contrast-rec-saved').textContent = 'Save ' + fmt(intSavedRec)
   document.getElementById('contrast-rec-method').textContent = avaBetter ? 'Avalanche method' : 'Snowball method'
@@ -1728,7 +1729,7 @@ function recalculate(animateDate = false) {
 
   // Plan cards
   _selectedMethod = method
-  document.getElementById('plan-method-label').textContent = (liveState.methodLocked ? 'Your locked method: ' : (showSettlement || showConsolidation) ? 'For comparison: ' : 'Recommended method: ') + (avaBetter ? 'Avalanche' : 'Snowball')
+  document.getElementById('plan-method-label').textContent = (liveState.methodLocked ? 'Your locked method: ' : recMode !== 'payoff' ? 'For comparison: ' : 'Recommended method: ') + (avaBetter ? 'Avalanche' : 'Snowball')
   const planSteps = generatePlan(debtsForPlan, extra, method)
   renderPlanCards(planSteps, extra, null, true)
 
@@ -1760,9 +1761,9 @@ function recalculate(animateDate = false) {
   const se = calculateSettlementEstimate(totalDebt)
   const ctaHtml = '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process: word-for-word scripts, creditor intelligence, and a full settlement platform, for $249 flat. A traditional company would charge around ' + fmt(se.companyMonthlyPayment) + '/mo over the standard ' + se.standardMonths + '-month program. Keep that same payment with debtself and you could be done in about ' + se.debtselfFastMonths + ' months instead — or pay less, around ' + fmt(se.debtselfLowPayment) + '/mo, and still finish in the same ' + se.standardMonths + ' months.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>'
   const consolidationEarlyHtml = '<div class="odds-box ' + odds.level + '"><div class="odds-title">' + odds.label + ': ' + odds.rate + '</div><div class="odds-text">' + odds.text + '</div></div>'
-  document.getElementById('ds-wrap-early').innerHTML = showSettlement ? ctaHtml : showConsolidation ? consolidationEarlyHtml : ''
+  document.getElementById('ds-wrap-early').innerHTML = (recMode === 'deficit' || recMode === 'settlement') ? ctaHtml : recMode === 'consolidation' ? consolidationEarlyHtml : ''
   document.getElementById('ds-wrap').innerHTML = ''
-  document.getElementById('secondary-payoff-header').textContent = showSettlement ? 'IF YOU STILL WANT TO SEE THE PAYOFF MATH' : showConsolidation ? 'IF YOU DON\'T GET APPROVED FOR CONSOLIDATION' : ''
+  document.getElementById('secondary-payoff-header').textContent = (recMode === 'deficit' || recMode === 'settlement') ? 'IF YOU STILL WANT TO SEE THE PAYOFF MATH' : recMode === 'consolidation' ? 'IF YOU DON\'T GET APPROVED FOR CONSOLIDATION' : ''
 
   // Snapshot for email
   window._plannerSnapshot = {
@@ -2124,7 +2125,9 @@ function selectMethod(key) {
   const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
   const planContainer = document.getElementById('plan-cards-container')
   const showSettlementPreview = ((avaBetter ? avaFull.months : snowFull.months) >= 60 || available < 200) && liveState.creditScore !== 'excellent'
-  const recParams = {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore: liveState.creditScore, showSettlement: showSettlementPreview, recMonths: avaBetter ? avaFull.months : snowFull.months}
+  const showConsolidationPreview = liveState.creditScore === 'excellent' && (ccDebts.reduce((s,d) => s + (Number(d.limit)||0), 0) > 0 ? Math.round((ccDebts.reduce((s,d) => s + Number(d.balance), 0) / ccDebts.reduce((s,d) => s + (Number(d.limit)||0), 0)) * 100) : 0) <= 50
+  const recModePreview = available < 0 ? 'deficit' : showSettlementPreview ? 'settlement' : showConsolidationPreview ? 'consolidation' : 'payoff'
+  const previewCaveat = recModePreview === 'deficit' ? ' Note: your budget can\'t support any payoff plan right now — see the recommendation above.' : recModePreview === 'settlement' ? ' Note: your overall situation may favor settlement — see the recommendation above.' : recModePreview === 'consolidation' ? ' Note: your profile may qualify for consolidation — see the recommendation above.' : ''
 
   const methodLabel = { avalanche: 'Avalanche method', snowball: 'Snowball method', minimums: 'Minimum payments only', consolidation: 'Consolidation loan', settlement: 'Debt settlement' }
   document.getElementById('plan-method-label').textContent = 'Viewing: ' + (methodLabel[key] || key)
@@ -2132,10 +2135,9 @@ function selectMethod(key) {
   if (key === 'avalanche') {
     const sortedForFirst = [...debts].sort((a,b) => numOr(b.apr,22.99)-numOr(a.apr,22.99))
     const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
-    const rec = generateRecContent(extra, avaFull, snowFull, recParams)
-    document.getElementById('rec-verdict').textContent = rec.verdict
-    document.getElementById('rec-why').textContent = rec.why
-    document.getElementById('rec-tradeoff').textContent = rec.tradeoff
+    document.getElementById('rec-verdict').textContent = 'Avalanche method: pay highest-interest debt first.'
+    document.getElementById('rec-why').textContent = 'Targets the account charging you the most interest. You\'ll be debt-free by ' + fmtDate(avaFull.months) + ' and save ' + fmt(intSavedAva) + ' in interest versus paying minimums only.' + previewCaveat
+    document.getElementById('rec-tradeoff').textContent = 'Mathematically optimal for minimizing total interest paid. Requires discipline — early wins may be slow if your highest-rate debt also has a large balance.'
     document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
     document.getElementById('stat-date').textContent = fmtDate(avaFull.months)
     document.getElementById('stat-saved').textContent = fmt(intSavedAva)
@@ -2145,10 +2147,9 @@ function selectMethod(key) {
   } else if (key === 'snowball') {
     const sortedForFirst = [...debts].sort((a,b) => Number(a.balance)-Number(b.balance))
     const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
-    const rec = generateRecContent(extra, avaFull, snowFull, recParams)
-    document.getElementById('rec-verdict').textContent = rec.verdict
-    document.getElementById('rec-why').textContent = rec.why
-    document.getElementById('rec-tradeoff').textContent = rec.tradeoff
+    document.getElementById('rec-verdict').textContent = 'Snowball method: pay smallest balance first.'
+    document.getElementById('rec-why').textContent = 'Eliminates accounts quickly to build momentum. You\'ll be debt-free by ' + fmtDate(snowFull.months) + ' and save ' + fmt(intSavedSnow) + ' in interest versus paying minimums only.' + previewCaveat
+    document.getElementById('rec-tradeoff').textContent = 'Provides faster early wins that help maintain motivation. May cost slightly more in total interest than avalanche if your smallest balance is not your highest-rate debt.'
     document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
     document.getElementById('stat-date').textContent = fmtDate(snowFull.months)
     document.getElementById('stat-saved').textContent = fmt(intSavedSnow)
