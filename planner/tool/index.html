@@ -1684,7 +1684,7 @@ function recalculate(animateDate = false) {
   // Score ring
   const hasUtilData = totalLim > 0
   const scoreResult = calcDebtFreedomScore({available, totalUtil, weightedAPR, months: recommendedRun.months, hasUtilData})
-  const score = scoreResult.total
+  const score = recMode === 'deficit' ? Math.min(scoreResult.total, 19) : scoreResult.total
   const scoreLabel = score >= 80 ? 'Strong' : score >= 60 ? 'Manageable' : score >= 40 ? 'Under Pressure' : score >= 20 ? 'High Risk' : 'Critical'
   const scoreColor = score >= 80 ? '#0A0E12' : score >= 60 ? 'rgba(255,77,46,0.5)' : score >= 40 ? 'rgba(255,77,46,0.7)' : '#FF4D2E'
   const factorMessages = {
