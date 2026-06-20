@@ -902,6 +902,11 @@ function go(id, step) {
 // ═══════════════════════════════════════
 //  FORMAT
 // ═══════════════════════════════════════
+function numOr(val, fallback) {
+  if (val === '' || val === null || val === undefined) return fallback
+  const n = Number(val)
+  return Number.isFinite(n) ? n : fallback
+}
 function fmt(n) { if(!n||isNaN(n)) return '$0'; return '$'+Math.round(n).toLocaleString('en-US') }
 function fmtDate(m) {
   if(m==null||isNaN(m)||m<0||m>600) return '50+ years'
@@ -1005,9 +1010,11 @@ function updateDebtPreview(id) {
   const el = document.getElementById(id + '-preview')
   if (!el) return
   const bal = Number(d && d.balance)
-  const apr = Number(d && d.apr)
+  const aprRaw = d && d.apr
+  const aprMissing = aprRaw === '' || aprRaw === undefined || aprRaw === null || isNaN(Number(aprRaw))
+  const apr = aprMissing ? NaN : Number(aprRaw)
   const minPay = Number(d && d.minPay)
-  if (!d || bal <= 0 || !apr || !minPay) { el.textContent = ''; return }
+  if (!d || bal <= 0 || aprMissing || !minPay) { el.textContent = ''; return }
   const monthlyInterest = bal * (apr / 100 / 12)
   if (minPay <= monthlyInterest) {
     const needed = Math.ceil(monthlyInterest) + 1
@@ -1041,10 +1048,10 @@ function checkDebtReady() {
 
     // Check APR
     const aprInputs = card.querySelectorAll('input[placeholder="22.99"], input[placeholder="8.99"]')
-    const aprVal = Number(d.apr)
+    const aprMissing = d.apr === '' || d.apr === undefined || d.apr === null || isNaN(Number(d.apr))
     aprInputs.forEach(inp => {
       let hint = inp.parentElement.querySelector('.field-hint')
-      if (!aprVal) {
+      if (aprMissing) {
         inp.style.borderColor = 'var(--red)'
         if (!hint) {
           hint = document.createElement('div')
@@ -1170,7 +1177,7 @@ function removeOblig(id) {
 function getMin(bal,apr) { return Math.max(bal*0.02,25) }
 
 function runAvalanche(debts, extra) {
-  let dw=debts.map(d=>({...d,balance:Number(d.balance),apr:Number(d.apr)||22.99,minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
+  let dw=debts.map(d=>({...d,balance:Number(d.balance),apr:numOr(d.apr,22.99),minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
   dw.sort((a,b)=>b.apr-a.apr)
   // Ensure each minimum payment exceeds monthly interest to prevent infinite loop
   dw=dw.map(d=>{const r=d.apr/100/12;const minInt=d.balance*r;return {...d,minPay:Math.max(d.minPay,minInt+1)}})
@@ -1191,7 +1198,7 @@ function runAvalanche(debts, extra) {
 }
 
 function runSnowball(debts, extra) {
-  let dw=debts.map(d=>({...d,balance:Number(d.balance),apr:Number(d.apr)||22.99,minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
+  let dw=debts.map(d=>({...d,balance:Number(d.balance),apr:numOr(d.apr,22.99),minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
   dw.sort((a,b)=>a.balance-b.balance)
   // Ensure each minimum payment exceeds monthly interest to prevent infinite loop
   dw=dw.map(d=>{const r=d.apr/100/12;const minInt=d.balance*r;return {...d,minPay:Math.max(d.minPay,minInt+1)}})
@@ -1214,7 +1221,7 @@ function runSnowball(debts, extra) {
 function runMinimums(debts) {
   let total=0,maxM=0
   debts.filter(d=>Number(d.balance)>0).forEach(d=>{
-    const bal=Number(d.balance),r=(Number(d.apr)||22.99)/100/12
+    const bal=Number(d.balance),r=numOr(d.apr,22.99)/100/12
     const monthlyInterest=bal*r
     // Ensure minimum payment always exceeds monthly interest to prevent infinite loop
     const mp=Math.max(Number(d.minPay)||getMin(bal,Number(d.apr)),monthlyInterest+1)
@@ -1241,7 +1248,7 @@ function getConsolidationOdds(score, utilization) {
 //  GENERATE PAYMENT PLAN
 // ═══════════════════════════════════════
 function generatePlan(debts, extra, method) {
-  let dw=debts.map(d=>({name:d.name||'Account',balance:Number(d.balance),apr:Number(d.apr)||22.99,minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
+  let dw=debts.map(d=>({name:d.name||'Account',balance:Number(d.balance),apr:numOr(d.apr,22.99),minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
   if(!dw.length) return [{type:'done',month:0}]
   // Protect against infinite loop
   dw=dw.map(d=>{const r=d.apr/100/12;return {...d,minPay:Math.max(d.minPay,d.balance*r+1)}})
@@ -1313,7 +1320,7 @@ function calculate() {
   const totalLim=ccDebts.reduce((s,d)=>s+Number(d.limit),0)
   const totalUtil=totalLim>0?Math.round((totalBal/totalLim)*100):0
 
-  const highestApr=valid.sort((a,b)=>(Number(b.apr)||22.99)-(Number(a.apr)||22.99))[0]
+  const highestApr=valid.sort((a,b)=>numOr(b.apr,22.99)-numOr(a.apr,22.99))[0]
   const coFee=Math.round(totalDebt*0.25)
   const youKeep=coFee-249
 
@@ -1427,7 +1434,7 @@ function applyLumpSumToDebts(debts, lumpSum, method) {
   const copied = debts.map(d => ({...d, balance: Number(d.balance)}))
   const sorted = copied.filter(d => d.balance > 0)
   method === 'avalanche'
-    ? sorted.sort((a,b) => (Number(b.apr)||22.99)-(Number(a.apr)||22.99))
+    ? sorted.sort((a,b) => numOr(b.apr,22.99)-numOr(a.apr,22.99))
     : sorted.sort((a,b) => Number(a.balance)-Number(b.balance))
   if (sorted.length > 0) {
     const targetId = sorted[0].id || sorted[0].name
@@ -1446,13 +1453,13 @@ function advanceOneMonth(debts, extra, method) {
   if (!active.length) return { debts: copied, paidOffIds: [] }
 
   method === 'avalanche'
-    ? active.sort((a,b) => (Number(b.apr)||22.99) - (Number(a.apr)||22.99))
+    ? active.sort((a,b) => numOr(b.apr,22.99) - numOr(a.apr,22.99))
     : active.sort((a,b) => Number(a.balance) - Number(b.balance))
 
   const targetId = active[0].id || active[0].name
 
   active.forEach(d => {
-    const r = (Number(d.apr)||22.99) / 100 / 12
+    const r = numOr(d.apr,22.99) / 100 / 12
     const minInt = d.balance * r
     const effectiveMin = Math.max(Number(d.minPay) || getMin(d.balance, Number(d.apr)), minInt + 1)
     const isTarget = (d.id || d.name) === targetId
@@ -1483,9 +1490,9 @@ function generateRecContent(extra, avaFull, snowFull, params) {
   const avaBetter = avaFull.totalInterest <= snowFull.totalInterest
   const intDiff = Math.abs(intSavedAva - intSavedSnow)
   const aprName = highestApr ? (highestApr.name || 'your highest-rate account') : 'your highest-rate account'
-  const aprVal = highestApr ? (Number(highestApr.apr) || 22.99).toFixed(2) : '22.99'
+  const aprVal = highestApr ? numOr(highestApr.apr, 22.99).toFixed(2) : '22.99'
   const monthlyInterestCost = highestApr ? Math.round(Number(highestApr.balance) * (Number(highestApr.apr) / 100 / 12)) : 0
-  const weightedAPR = totalDebt > 0 ? Math.round(debts.reduce((s,d) => s + (Number(d.apr)||22.99)*Number(d.balance), 0) / totalDebt * 10) / 10 : 0
+  const weightedAPR = totalDebt > 0 ? Math.round(debts.reduce((s,d) => s + numOr(d.apr,22.99)*Number(d.balance), 0) / totalDebt * 10) / 10 : 0
   const pctHighRate = totalDebt > 0 ? Math.round((ccDebts||[]).filter(d => (Number(d.apr)||0) > 20).reduce((s,d) => s + Number(d.balance), 0) / totalDebt * 100) : 0
 
   let verdict, why, tradeoff
@@ -1534,7 +1541,7 @@ function renderAccountsSummary() {
     html += '<span class="acct-name">' + (d.name || 'ACCOUNT').toUpperCase() + '</span>'
     html += '<span class="acct-detail">'
     html += '<span class="acct-bal editable-val" data-field="balance" data-id="' + (d.id || d.name) + '" onclick="startEdit(this)">' + fmt(d.balance) + '</span>'
-    html += '<span class="acct-apr">' + (Number(d.apr)||22.99).toFixed(1) + '% APR</span>'
+    html += '<span class="acct-apr">' + numOr(d.apr,22.99).toFixed(1) + '% APR</span>'
     html += '</span>'
     html += '</div>'
   })
@@ -1624,8 +1631,8 @@ function recalculate(animateDate = false) {
   const totalBal = ccDebts.reduce((s,d) => s + Number(d.balance), 0)
   const totalLim = ccDebts.reduce((s,d) => s + (Number(d.limit)||0), 0)
   const totalUtil = totalLim > 0 ? Math.round((totalBal/totalLim)*100) : 0
-  const weightedAPR = totalDebt > 0 ? Math.round(debts.reduce((s,d) => s + (Number(d.apr)||22.99)*Number(d.balance), 0) / totalDebt * 10) / 10 : 0
-  const highestApr = [...debts].sort((a,b) => (Number(b.apr)||22.99)-(Number(a.apr)||22.99))[0] || debts[0]
+  const weightedAPR = totalDebt > 0 ? Math.round(debts.reduce((s,d) => s + numOr(d.apr,22.99)*Number(d.balance), 0) / totalDebt * 10) / 10 : 0
+  const highestApr = [...debts].sort((a,b) => numOr(b.apr,22.99)-numOr(a.apr,22.99))[0] || debts[0]
   const {coFee, youKeep} = calcD
   const showSettlement = available < 300 && liveState.creditScore !== 'excellent'
   const showConsolidation = liveState.creditScore === 'excellent' && totalUtil <= 50
@@ -1684,7 +1691,7 @@ function recalculate(animateDate = false) {
   document.getElementById('rec-tradeoff').textContent = rec.tradeoff
 
   // Stat boxes
-  const sortedForFirst = [...debts].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
+  const sortedForFirst = [...debts].sort((a,b) => avaBetter ? numOr(b.apr,22.99)-numOr(a.apr,22.99) : Number(a.balance)-Number(b.balance))
   const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
   const statDateEl = document.getElementById('stat-date')
   const newDateText = fmtDate(recMonths)
@@ -1929,7 +1936,7 @@ function applyMonthPayment(oneTimeExtra = 0) {
     if (remaining.length > 0) {
       const method = liveState.lockedMethod
       const sorted = [...remaining].sort(method === 'avalanche'
-        ? (a,b) => (Number(b.apr)||22.99) - (Number(a.apr)||22.99)
+        ? (a,b) => numOr(b.apr,22.99) - numOr(a.apr,22.99)
         : (a,b) => Number(a.balance) - Number(b.balance))
       const nextTargetName = sorted[0].name || sorted[0].id
       const paidOffDetails = result.paidOffIds.map(pid => {
@@ -2092,7 +2099,7 @@ function selectMethod(key) {
   const totalBal = ccDebts.reduce((s,d) => s + Number(d.balance), 0)
   const totalLim = ccDebts.reduce((s,d) => s + (Number(d.limit)||0), 0)
   const totalUtil = totalLim > 0 ? Math.round((totalBal/totalLim)*100) : 0
-  const highestApr = [...debts].sort((a,b) => (Number(b.apr)||22.99)-(Number(a.apr)||22.99))[0] || debts[0]
+  const highestApr = [...debts].sort((a,b) => numOr(b.apr,22.99)-numOr(a.apr,22.99))[0] || debts[0]
   const totalMin = debts.filter(d => Number(d.balance) > 0).reduce((s,d) => s + (Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))), 0)
   const available = liveState.budget.income - liveState.budget.expenses - liveState.budget.obligations - totalMin
   const minimums = runMinimums(debts)
@@ -2111,7 +2118,7 @@ function selectMethod(key) {
   document.getElementById('plan-method-label').textContent = 'Viewing: ' + (methodLabel[key] || key)
 
   if (key === 'avalanche') {
-    const sortedForFirst = [...debts].sort((a,b) => (Number(b.apr)||22.99)-(Number(a.apr)||22.99))
+    const sortedForFirst = [...debts].sort((a,b) => numOr(b.apr,22.99)-numOr(a.apr,22.99))
     const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
     const rec = generateRecContent(extra, avaFull, snowFull, recParams)
     document.getElementById('rec-verdict').textContent = rec.verdict
@@ -2137,7 +2144,7 @@ function selectMethod(key) {
     renderPlanCards(generatePlan(debtsSnow, extra, 'snowball'), extra, null, false)
 
   } else if (key === 'minimums') {
-    const sortedForFirst = [...debts].sort((a,b) => avaBetter ? (Number(b.apr)||22.99)-(Number(a.apr)||22.99) : Number(a.balance)-Number(b.balance))
+    const sortedForFirst = [...debts].sort((a,b) => avaBetter ? numOr(b.apr,22.99)-numOr(a.apr,22.99) : Number(a.balance)-Number(b.balance))
     const firstPay = Number(sortedForFirst[0]?.minPay) || 0
     document.getElementById('rec-verdict').textContent = 'Minimum payments only. The most expensive path.'
     document.getElementById('rec-why').textContent = 'No extra payment applied. Each account is paid at its entered minimum until the balance reaches zero. At this pace you are debt free by ' + fmtDate(minimums.months) + ' and pay ' + fmt(minimums.totalInterest) + ' in total interest.'
