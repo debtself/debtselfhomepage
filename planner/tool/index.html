@@ -1408,13 +1408,23 @@ function buildUnlock() {
 // ═══════════════════════════════════════
 //  SCORE CALCULATION
 // ═══════════════════════════════════════
-function calcDebtFreedomScore({dti, available, totalUtil, weightedAPR, months}) {
-  const f1 = dti < 15 ? 20 : dti < 30 ? 15 : dti < 45 ? 10 : 0
-  const f2 = available > 500 ? 20 : available >= 300 ? 15 : available > 0 ? 8 : 0
-  const f3 = totalUtil < 30 ? 20 : totalUtil < 50 ? 15 : totalUtil < 75 ? 8 : 0
-  const f4 = weightedAPR < 12 ? 20 : weightedAPR < 18 ? 15 : weightedAPR < 24 ? 8 : 0
-  const f5 = months < 24 ? 20 : months < 48 ? 15 : months < 84 ? 8 : 0
-  return { total: f1 + f2 + f3 + f4 + f5, factors: [f1, f2, f3, f4, f5] }
+function calcDebtFreedomScore({available, totalUtil, weightedAPR, months, hasUtilData}) {
+  const fTimeline = months < 24 ? 30 : months < 48 ? 22 : months < 60 ? 10 : 0
+  const fMargin = available >= 1000 ? 30 : available >= 500 ? 20 : available >= 200 ? 8 : available > 0 ? 2 : 0
+  const fAPR = weightedAPR < 12 ? 20 : weightedAPR < 18 ? 13 : weightedAPR < 24 ? 7 : 0
+  const factors = [
+    { key: 'timeline', value: fTimeline, max: 30 },
+    { key: 'margin', value: fMargin, max: 30 },
+  ]
+  if (hasUtilData) {
+    const fUtil = totalUtil < 30 ? 20 : totalUtil < 50 ? 15 : totalUtil < 75 ? 8 : 0
+    factors.push({ key: 'utilization', value: fUtil, max: 20 })
+  }
+  factors.push({ key: 'apr', value: fAPR, max: 20 })
+  const rawSum = factors.reduce((s,f) => s + f.value, 0)
+  const maxPossible = factors.reduce((s,f) => s + f.max, 0)
+  const total = hasUtilData ? rawSum : Math.round(rawSum * 100 / maxPossible)
+  return { total, factors, hasUtilData }
 }
 
 function updateScoreRing(score, label, color, factorsHtml) {
@@ -1477,7 +1487,7 @@ function advanceOneMonth(debts, extra, method) {
 //  REC CONTENT — returns {verdict, why, tradeoff}
 // ═══════════════════════════════════════
 function generateRecContent(extra, avaFull, snowFull, params) {
-  const {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore} = params
+  const {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore, showSettlement} = params
   if (totalDebt <= 0) {
     return {
       verdict: 'You\'re debt free. There\'s nothing left to plan for here.',
@@ -1501,7 +1511,7 @@ function generateRecContent(extra, avaFull, snowFull, params) {
     verdict = 'Your current budget cannot support any payoff plan without changes.'
     why = 'Your expenses exceed your income by ' + fmt(Math.abs(available)) + ' per month. At this pace, minimum payments alone are not sustainable. Before choosing a payoff method, either income needs to go up or expenses need to come down. Debt settlement, which reduces what you owe and not just the rate, may be the only viable path right now.'
     tradeoff = 'No payoff method works well when the budget is this tight. The interest accumulating each month is outpacing what you can pay above minimums.'
-  } else if (available < 300 && creditScore !== 'excellent') {
+  } else if (showSettlement) {
     const se = calculateSettlementEstimate(totalDebt)
     verdict = 'Your budget is too tight for payoff to work. Debt settlement is the better path here.'
     why = 'With only ' + fmt(available) + ' left after expenses and minimums, a payoff plan is not realistic at this budget. A traditional settlement company would charge around ' + fmt(se.companyMonthlyPayment) + '/mo over the standard ' + se.standardMonths + '-month program. debtself does not take a cut of your payments, so you could keep that same payment and be done in about ' + se.debtselfFastMonths + ' months instead — or pay less, about ' + fmt(se.debtselfLowPayment) + '/mo, and still finish in the same ' + se.standardMonths + ' months.'
@@ -1626,7 +1636,6 @@ function recalculate(animateDate = false) {
   }
   const extra = liveState.extra || 0
 
-  const dti = income > 0 ? Math.round(((totalMin + obligations) / income) * 100) : 0
   const ccDebts = debts.filter(d => d.type === 'cc' || !d.type)
   const totalBal = ccDebts.reduce((s,d) => s + Number(d.balance), 0)
   const totalLim = ccDebts.reduce((s,d) => s + (Number(d.limit)||0), 0)
@@ -1634,7 +1643,6 @@ function recalculate(animateDate = false) {
   const weightedAPR = totalDebt > 0 ? Math.round(debts.reduce((s,d) => s + numOr(d.apr,22.99)*Number(d.balance), 0) / totalDebt * 10) / 10 : 0
   const highestApr = [...debts].sort((a,b) => numOr(b.apr,22.99)-numOr(a.apr,22.99))[0] || debts[0]
   const {coFee, youKeep} = calcD
-  const showSettlement = available < 300 && liveState.creditScore !== 'excellent'
   const showConsolidation = liveState.creditScore === 'excellent' && totalUtil <= 50
 
   const debtsAva = applyLumpSumToDebts(debts, lumpSum, 'avalanche')
@@ -1648,24 +1656,27 @@ function recalculate(animateDate = false) {
     ? liveState.lockedMethod === 'avalanche'
     : avaFull.totalInterest <= snowFull.totalInterest
   const recommendedRun = avaBetter ? avaFull : snowFull
+  const showSettlement = (recommendedRun.months >= 60 || available < 200) && liveState.creditScore !== 'excellent'
   const intSavedRec = avaBetter ? intSavedAva : intSavedSnow
   const method = avaBetter ? 'avalanche' : 'snowball'
   const debtsForPlan = avaBetter ? debtsAva : debtsSnow
 
   // Score ring
-  const scoreResult = calcDebtFreedomScore({dti, available, totalUtil, weightedAPR, months: recommendedRun.months})
+  const hasUtilData = totalLim > 0
+  const scoreResult = calcDebtFreedomScore({available, totalUtil, weightedAPR, months: recommendedRun.months, hasUtilData})
   const score = scoreResult.total
-  const factors = scoreResult.factors
   const scoreLabel = score >= 80 ? 'Strong' : score >= 60 ? 'Manageable' : score >= 40 ? 'Under Pressure' : score >= 20 ? 'High Risk' : 'Critical'
   const scoreColor = score >= 80 ? '#0A0E12' : score >= 60 ? 'rgba(255,77,46,0.5)' : score >= 40 ? 'rgba(255,77,46,0.7)' : '#FF4D2E'
-  const factorMessages = [
-    'Your debt-to-income ratio is limiting your options.',
-    'Your available monthly budget is too tight to accelerate payoff.',
-    'High credit utilization is affecting your credit profile.',
-    'Your interest rates are costing you significantly each month.',
-    'Your payoff timeline puts significant interest at risk.'
-  ]
-  const dragHtml = factors.map((v,i) => ({v,i})).sort((a,b) => a.v-b.v).slice(0,2).map(f => '<div>' + factorMessages[f.i] + '</div>').join('')
+  const factorMessages = {
+    timeline: 'Your projected payoff timeline is longer than ideal at your current pace.',
+    margin: 'Your monthly margin is too thin to comfortably absorb a surprise expense.',
+    utilization: 'High credit utilization is affecting your credit profile.',
+    apr: 'Your interest rates are costing you significantly each month.'
+  }
+  const belowMax = scoreResult.factors.filter(f => f.value < f.max).sort((a,b) => (b.max-b.value) - (a.max-a.value)).slice(0,2)
+  const dragHtml = belowMax.length > 0
+    ? belowMax.map(f => '<div>' + factorMessages[f.key] + '</div>').join('')
+    : '<div>Every factor here is already working in your favor.</div>'
   updateScoreRing(score, scoreLabel, scoreColor, dragHtml)
 
   // Contrast cards
@@ -1684,7 +1695,7 @@ function recalculate(animateDate = false) {
   document.getElementById('contrast-diff').textContent = diffText
 
   // Rec card
-  const recParams = {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore: liveState.creditScore}
+  const recParams = {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore: liveState.creditScore, showSettlement, recMonths: recommendedRun.months}
   const rec = generateRecContent(extra, avaFull, snowFull, recParams)
   document.getElementById('rec-verdict').textContent = rec.verdict
   document.getElementById('rec-why').textContent = rec.why
@@ -2112,7 +2123,8 @@ function selectMethod(key) {
   const intSavedAva = minimums.totalInterest - avaFull.totalInterest
   const intSavedSnow = minimums.totalInterest - snowFull.totalInterest
   const planContainer = document.getElementById('plan-cards-container')
-  const recParams = {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore: liveState.creditScore}
+  const showSettlementPreview = ((avaBetter ? avaFull.months : snowFull.months) >= 60 || available < 200) && liveState.creditScore !== 'excellent'
+  const recParams = {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore: liveState.creditScore, showSettlement: showSettlementPreview, recMonths: avaBetter ? avaFull.months : snowFull.months}
 
   const methodLabel = { avalanche: 'Avalanche method', snowball: 'Snowball method', minimums: 'Minimum payments only', consolidation: 'Consolidation loan', settlement: 'Debt settlement' }
   document.getElementById('plan-method-label').textContent = 'Viewing: ' + (methodLabel[key] || key)
