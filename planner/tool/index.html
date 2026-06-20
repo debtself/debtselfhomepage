@@ -613,11 +613,12 @@
       <div class="monthly-equiv" id="monthly-equiv"></div>
       <div style="margin-top:14px;">
         <div class="budget-q-title" style="font-size:15px;margin-bottom:4px;">Gross pay for that same paycheck <span style="font-weight:400;color:var(--muted);">(optional)</span></div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6;">Only used to calculate your debt-to-income ratio the way lenders do. Check your pay stub if you're not sure — totally fine to skip.</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6;">Lenders use gross pay (before taxes and deductions) to calculate DTI since it's comparable across different tax situations — usually the largest number on your pay stub. For example, if your stub shows $1,500 before deductions but you take home $1,200, enter $1,500. Totally fine to skip if you don't have it handy.</div>
         <div class="amount-inp-wrap">
           <span class="amount-prefix">$</span>
           <input class="amount-inp" type="number" id="gross-paycheck-amt" placeholder="0" min="0" oninput="S.grossPaycheckAmt=Number(this.value)||0;updatePaycheck()" />
         </div>
+        <div id="gross-warning" style="display:none;font-size:11px;color:var(--red);margin-top:6px;line-height:1.5;">Gross pay should be higher than your take-home pay — double check this number.</div>
       </div>
     </div>
 
@@ -1133,7 +1134,15 @@ function updatePaycheck() {
   S.grossMonthlyIncome = (S.grossPaycheckAmt > 0 && S.paycheckFreq)
     ? Math.round(S.grossPaycheckAmt * FREQ_MULT[S.paycheckFreq])
     : 0
+  checkGrossValidation()
   checkBudgetReady()
+}
+
+function checkGrossValidation() {
+  const warning = document.getElementById('gross-warning')
+  if (!warning) return
+  const showWarning = S.grossPaycheckAmt > 0 && S.paycheckAmt > 0 && S.grossPaycheckAmt < S.paycheckAmt
+  warning.style.display = showWarning ? 'block' : 'none'
 }
 
 function checkBudgetReady() {
