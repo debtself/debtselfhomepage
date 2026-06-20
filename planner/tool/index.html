@@ -1328,7 +1328,17 @@ function calculate() {
   const avalanche=runAvalanche(valid,0)
   const snowball=runSnowball(valid,0)
 
-  calcD={valid,totalDebt,totalMin,totalOblig,totalExp,available,dti,dtiBasis,totalUtil,ccDebts,highestApr,coFee,youKeep,minimums,avalanche,snowball}
+  const sliderMaxForUnlock = Math.max(0, Math.floor(available / 25) * 25)
+  const extraDefaultForUnlock = Math.min(Math.max(0, Math.floor((available * 0.5) / 25) * 25), sliderMaxForUnlock)
+  const avalancheWithExtra = runAvalanche(valid, extraDefaultForUnlock)
+  const snowballWithExtra = runSnowball(valid, extraDefaultForUnlock)
+  const avaBetterForUnlock = avalancheWithExtra.totalInterest <= snowballWithExtra.totalInterest
+  const recMonthsForUnlock = avaBetterForUnlock ? avalancheWithExtra.months : snowballWithExtra.months
+  const showSettlementForUnlock = (recMonthsForUnlock >= 60 || available < 200) && S.creditScore !== 'excellent'
+  const showConsolidationForUnlock = S.creditScore === 'excellent' && totalUtil <= 50
+  const recModeForUnlock = available < 0 ? 'deficit' : showSettlementForUnlock ? 'settlement' : showConsolidationForUnlock ? 'consolidation' : 'payoff'
+
+  calcD={valid,totalDebt,totalMin,totalOblig,totalExp,available,dti,dtiBasis,totalUtil,ccDebts,highestApr,coFee,youKeep,minimums,avalanche,snowball,recModeForUnlock}
 
   // Cost of nothing animation
   animateTicker(minimums.totalInterest)
@@ -1356,7 +1366,7 @@ function animateTicker(target) {
 //  BUILD UNLOCK SCREEN
 // ═══════════════════════════════════════
 function buildUnlock() {
-  const {available,dti,dtiBasis,totalUtil,ccDebts,totalMin,totalExp,totalOblig} = calcD
+  const {available,dti,dtiBasis,totalUtil,ccDebts,totalMin,totalExp,totalOblig,recModeForUnlock} = calcD
   document.getElementById('ul-income').textContent=fmt(S.monthlyIncome)
   document.getElementById('ul-expenses').textContent=fmt(totalExp)
   document.getElementById('ul-oblig').textContent=totalOblig>0?fmt(totalOblig):'$0'
@@ -1389,9 +1399,9 @@ function buildUnlock() {
 
   // Unlock headline
   let headline='Here is exactly where your money goes.'
-  if(available>=500) headline='You have real room to accelerate your payoff. Here is how.'
-  else if(available>=300) headline='You have some breathing room, though not a lot. Here is what that unlocks.'
-  else if(available>0) headline='Your budget is tight right now. Here is the honest picture.'
+  if(recModeForUnlock==='payoff') headline='You have real room to accelerate your payoff. Here is how.'
+  else if(recModeForUnlock==='consolidation') headline='Your profile may unlock a better rate than any payoff plan. Here is the full picture.'
+  else if(recModeForUnlock==='settlement') headline='Your budget is too tight for payoff to move the needle. Here is the honest picture.'
   else headline='Your expenses are outpacing your income. Here is what needs to change.'
   document.getElementById('unlock-headline').textContent=headline
 
@@ -1399,10 +1409,10 @@ function buildUnlock() {
   const vb=document.getElementById('verdict-box')
   const vt=document.getElementById('verdict-title')
   const vtx=document.getElementById('verdict-text')
-  if(available>=500){vb.className='verdict-box positive';vt.textContent='Avalanche or snowball is fully executable';vtx.textContent='You have '+fmt(available)+' available above your minimum payments each month. You can fully execute either payoff method right now. The avalanche plan with extra payments will get you out the fastest.'}
-  else if(available>=300){vb.className='verdict-box positive';vt.textContent='Payoff is executable, though acceleration will be modest';vtx.textContent='You have '+fmt(available)+' left after expenses and minimums. There is real room to make progress but not a lot of room to accelerate. Even '+fmt(Math.min(available,100))+' per month extra makes a meaningful difference over time.'}
-  else if(available>0){vb.className='verdict-box warning';vt.textContent='Your budget is too tight for payoff alone — settlement is worth understanding';vtx.textContent='With only '+fmt(available)+' left after expenses and minimums, accelerating payoff will be difficult. This is the situation where understanding debt settlement as an alternative is worth your time. Settlement reduces the principal you owe, not just the interest rate. That is a fundamentally different outcome than any payoff plan.'}
-  else{vb.className='verdict-box negative';vt.textContent='Your expenses are outpacing your income right now.';vtx.textContent='Your current expenses exceed your income by '+fmt(Math.abs(available))+' per month. Minimum payments alone are not sustainable. Settlement or consolidation needs to be part of your plan. Review your expense categories for any immediate reductions.'}
+  if(recModeForUnlock==='payoff'){vb.className='verdict-box positive';vt.textContent='Avalanche or snowball is realistically executable';vtx.textContent='You have '+fmt(available)+' available above your minimum payments each month, and the math says a payoff plan gets you debt free in a reasonable timeframe. The avalanche method, targeting your highest rate first, will get you there fastest.'}
+  else if(recModeForUnlock==='consolidation'){vb.className='verdict-box positive';vt.textContent='Consolidation may beat a payoff plan for your profile';vtx.textContent='Your credit profile and utilization may qualify you for a consolidation loan at a meaningfully lower rate than your current accounts. Worth exploring before committing to a payoff plan, though avalanche or snowball both remain a solid fallback if it does not come through.'}
+  else if(recModeForUnlock==='settlement'){vb.className='verdict-box warning';vt.textContent='Your budget is too tight for payoff alone — settlement is worth understanding';vtx.textContent='Either your monthly margin is too thin to reliably sustain extra payments, or your debt is large enough relative to your budget that payoff would take longer than is realistic to stick with. Settlement reduces the principal you owe, not just the interest rate. That is a fundamentally different outcome than any payoff plan.'}
+  else{vb.className='verdict-box negative';vt.textContent='Your expenses are outpacing your income right now.';vtx.textContent='Your current expenses exceed your income by '+fmt(Math.abs(available))+' per month. Minimum payments alone are not sustainable. Before any payoff or settlement plan can work, either income needs to go up or expenses need to come down.'}
 }
 
 // ═══════════════════════════════════════
