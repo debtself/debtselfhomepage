@@ -832,7 +832,7 @@
 
     <!-- BLOCK 5: PHASE CARDS -->
     <div class="res-section">
-      <div class="res-section-eyebrow">YOUR MONTH-BY-MONTH PLAN</div>
+      <div class="res-section-eyebrow" id="month-plan-eyebrow">YOUR MONTH-BY-MONTH PLAN</div>
       <div id="plan-method-label" class="res-section-sub"></div>
       <div class="plan-progress-wrap">
         <div class="plan-progress-track"><div class="plan-progress-fill" id="plan-progress-fill"></div></div>
@@ -1677,6 +1677,7 @@ function recalculate(animateDate = false) {
   const recommendedRun = avaBetter ? avaFull : snowFull
   const showSettlement = (recommendedRun.months >= 60 || available < 200) && liveState.creditScore !== 'excellent'
   const recMode = available < 0 ? 'deficit' : showSettlement ? 'settlement' : showConsolidation ? 'consolidation' : 'payoff'
+  const showFullPlan = liveState.methodLocked || (recMode !== 'deficit' && recMode !== 'settlement')
   const intSavedRec = avaBetter ? intSavedAva : intSavedSnow
   const method = avaBetter ? 'avalanche' : 'snowball'
   const debtsForPlan = avaBetter ? debtsAva : debtsSnow
@@ -1722,25 +1723,38 @@ function recalculate(animateDate = false) {
   document.getElementById('rec-tradeoff').textContent = rec.tradeoff
 
   // Stat boxes
-  const sortedForFirst = [...debts].sort((a,b) => avaBetter ? numOr(b.apr,22.99)-numOr(a.apr,22.99) : Number(a.balance)-Number(b.balance))
-  const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
-  const statDateEl = document.getElementById('stat-date')
-  const newDateText = fmtDate(recMonths)
-  if (animateDate && statDateEl.textContent && statDateEl.textContent !== newDateText) {
-    statDateEl.style.transition = 'opacity .25s ease, transform .25s ease'
-    statDateEl.style.opacity = '0'
-    statDateEl.style.transform = 'translateY(6px)'
-    setTimeout(() => {
+  if (showFullPlan) {
+    const sortedForFirst = [...debts].sort((a,b) => avaBetter ? numOr(b.apr,22.99)-numOr(a.apr,22.99) : Number(a.balance)-Number(b.balance))
+    const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
+    const statDateEl = document.getElementById('stat-date')
+    const newDateText = fmtDate(recMonths)
+    if (animateDate && statDateEl.textContent && statDateEl.textContent !== newDateText) {
+      statDateEl.style.transition = 'opacity .25s ease, transform .25s ease'
+      statDateEl.style.opacity = '0'
+      statDateEl.style.transform = 'translateY(6px)'
+      setTimeout(() => {
+        statDateEl.textContent = newDateText
+        statDateEl.style.opacity = '1'
+        statDateEl.style.transform = 'translateY(0)'
+      }, 250)
+    } else {
       statDateEl.textContent = newDateText
-      statDateEl.style.opacity = '1'
-      statDateEl.style.transform = 'translateY(0)'
-    }, 250)
+    }
+    document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
+    document.getElementById('stat-saved').textContent = fmt(intSavedRec)
+    document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
+  } else if (recMode === 'settlement') {
+    const seStats = calculateSettlementEstimate(totalDebt)
+    document.getElementById('stat-date').textContent = seStats.standardMonths + ' months'
+    document.getElementById('stat-saved-lbl').textContent = 'You keep'
+    document.getElementById('stat-saved').textContent = fmt(youKeep)
+    document.getElementById('stat-payment').textContent = fmt(seStats.debtselfLowPayment) + '/mo'
   } else {
-    statDateEl.textContent = newDateText
+    document.getElementById('stat-date').textContent = '—'
+    document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
+    document.getElementById('stat-saved').textContent = '—'
+    document.getElementById('stat-payment').textContent = '—'
   }
-  document.getElementById('stat-saved-lbl').textContent = 'Interest saved'
-  document.getElementById('stat-saved').textContent = fmt(intSavedRec)
-  document.getElementById('stat-payment').textContent = fmt(firstPay) + '/mo'
 
   // Slider display
   document.getElementById('slider-display').textContent = fmt(extra) + '/mo'
@@ -1748,26 +1762,45 @@ function recalculate(animateDate = false) {
 
   // Plan cards
   _selectedMethod = method
-  document.getElementById('plan-method-label').textContent = (liveState.methodLocked ? 'Your locked method: ' : recMode !== 'payoff' ? 'For comparison: ' : 'Recommended method: ') + (avaBetter ? 'Avalanche' : 'Snowball')
-  const planSteps = generatePlan(debtsForPlan, extra, method)
-  renderPlanCards(planSteps, extra, null, true)
+  const planEyebrowEl = document.getElementById('month-plan-eyebrow')
+  const progWrap = document.querySelector('.plan-progress-wrap')
+  const milestonesWrap = document.querySelector('.milestones')
+  if (showFullPlan) {
+    if (planEyebrowEl) planEyebrowEl.textContent = 'YOUR MONTH-BY-MONTH PLAN'
+    if (progWrap) progWrap.style.display = ''
+    if (milestonesWrap) milestonesWrap.style.display = ''
+    document.getElementById('plan-method-label').textContent = (liveState.methodLocked ? 'Your locked method: ' : 'Recommended method: ') + (avaBetter ? 'Avalanche' : 'Snowball')
+    const planSteps = generatePlan(debtsForPlan, extra, method)
+    renderPlanCards(planSteps, extra, null, true)
 
-  // Progress bar
-  const totalMonthsForProgress = liveState.monthsCompleted + recMonths
-  const progressPct = totalMonthsForProgress > 0 ? Math.round((liveState.monthsCompleted / totalMonthsForProgress) * 100) : 0
-  document.getElementById('plan-progress-fill').style.width = progressPct + '%'
-  document.getElementById('plan-progress-label').textContent = liveState.monthsCompleted + ' of ' + totalMonthsForProgress + ' months tracked'
+    // Progress bar
+    const totalMonthsForProgress = liveState.monthsCompleted + recMonths
+    const progressPct = totalMonthsForProgress > 0 ? Math.round((liveState.monthsCompleted / totalMonthsForProgress) * 100) : 0
+    document.getElementById('plan-progress-fill').style.width = progressPct + '%'
+    document.getElementById('plan-progress-label').textContent = liveState.monthsCompleted + ' of ' + totalMonthsForProgress + ' months tracked'
 
-  // Milestones
-  renderMilestones(planSteps, totalDebt)
+    // Milestones
+    renderMilestones(planSteps, totalDebt)
+  } else {
+    if (planEyebrowEl) planEyebrowEl.textContent = 'ABOUT THE PAYOFF METHODS'
+    if (progWrap) progWrap.style.display = 'none'
+    if (milestonesWrap) milestonesWrap.style.display = 'none'
+    document.getElementById('plan-method-label').textContent = ''
+    const noPlanNote = recMode === 'deficit'
+      ? 'A payoff plan is not shown here because your budget cannot currently support extra payments toward any account. See the recommendation above.'
+      : 'An avalanche or snowball payment plan is not shown here because your numbers indicate settlement is the more realistic path. See the recommendation above.'
+    renderPlanCards([], 0, noPlanNote, false)
+    document.getElementById('milestone-list').innerHTML = ''
+  }
 
   // Compare modal
   const odds = getConsolidationOdds(liveState.creditScore, totalUtil)
-  const compareData = [
-    { key: 'avalanche', name: 'Avalanche method', date: fmtDate(avaFull.months), saved: fmt(intSavedAva), savedMuted: false },
-    { key: 'snowball',  name: 'Snowball method',  date: fmtDate(snowFull.months), saved: fmt(intSavedSnow), savedMuted: false },
-    { key: 'minimums',  name: 'Minimum payments only', date: fmtDate(minimums.months), saved: '--', savedMuted: true },
-  ]
+  const compareData = []
+  if (showFullPlan) {
+    compareData.push({ key: 'avalanche', name: 'Avalanche method', date: fmtDate(avaFull.months), saved: fmt(intSavedAva), savedMuted: false })
+    compareData.push({ key: 'snowball', name: 'Snowball method', date: fmtDate(snowFull.months), saved: fmt(intSavedSnow), savedMuted: false })
+  }
+  compareData.push({ key: 'minimums', name: 'Minimum payments only', date: fmtDate(minimums.months), saved: '--', savedMuted: true })
   if (liveState.creditScore !== 'poor') {
     compareData.push({ key: 'consolidation', name: 'Consolidation loan', date: odds.label, saved: odds.rate, savedMuted: true })
   }
@@ -1782,13 +1815,13 @@ function recalculate(animateDate = false) {
   const consolidationEarlyHtml = '<div class="odds-box ' + odds.level + '"><div class="odds-title">' + odds.label + ': ' + odds.rate + '</div><div class="odds-text">' + odds.text + '</div></div>'
   document.getElementById('ds-wrap-early').innerHTML = (recMode === 'deficit' || recMode === 'settlement') ? ctaHtml : recMode === 'consolidation' ? consolidationEarlyHtml : ''
   document.getElementById('ds-wrap').innerHTML = ''
-  document.getElementById('secondary-payoff-header').textContent = (recMode === 'deficit' || recMode === 'settlement') ? 'IF YOU STILL WANT TO SEE THE PAYOFF MATH' : recMode === 'consolidation' ? 'IF YOU DON\'T GET APPROVED FOR CONSOLIDATION' : ''
+  document.getElementById('secondary-payoff-header').textContent = !showFullPlan ? '' : recMode === 'consolidation' ? 'IF YOU DON\'T GET APPROVED FOR CONSOLIDATION' : ''
 
   // Snapshot for email
   window._plannerSnapshot = {
     totalDebt,
-    recommendedMethod: avaBetter ? 'Avalanche method' : 'Snowball method',
-    debtFreeDate: fmtDate(recMonths),
+    recommendedMethod: showFullPlan ? (avaBetter ? 'Avalanche method' : 'Snowball method') : (recMode === 'deficit' ? 'Budget review needed' : 'Debt settlement'),
+    debtFreeDate: showFullPlan ? fmtDate(recMonths) : (recMode === 'settlement' ? se.standardMonths + ' months (settlement estimate)' : '—'),
     interestSaved: intSavedRec,
     settlementRelevant: showSettlement,
   }
