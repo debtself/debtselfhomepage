@@ -1255,6 +1255,13 @@ function removeOblig(id) {
 //  CALCULATIONS
 // ═══════════════════════════════════════
 function getMin(bal,apr) { return Math.max(bal*0.02,25) }
+function getEffectiveMinPay(d) {
+  if (!d) return 0
+  const bal = Number(d.balance)
+  const r = numOr(d.apr,22.99)/100/12
+  const minInt = bal*r
+  return Math.max(Number(d.minPay)||getMin(bal,Number(d.apr)), minInt+1)
+}
 
 function runAvalanche(debts, extra) {
   let dw=debts.map(d=>({...d,balance:Number(d.balance),apr:numOr(d.apr,22.99),minPay:Number(d.minPay)||getMin(Number(d.balance),Number(d.apr))})).filter(d=>d.balance>0)
@@ -1871,7 +1878,7 @@ function recalculate(animateDate = false) {
   // Stat boxes
   if (showFullPlan) {
     const sortedForFirst = [...debts].sort((a,b) => avaBetter ? numOr(b.apr,22.99)-numOr(a.apr,22.99) : Number(a.balance)-Number(b.balance))
-    const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
+    const firstPay = getEffectiveMinPay(sortedForFirst[0]) + extra
     const statDateEl = document.getElementById('stat-date')
     const newDateText = fmtDate(recMonths)
     if (animateDate && statDateEl.textContent && statDateEl.textContent !== newDateText) {
@@ -2332,7 +2339,7 @@ function selectMethod(key) {
 
   if (key === 'avalanche') {
     const sortedForFirst = [...debts].sort((a,b) => numOr(b.apr,22.99)-numOr(a.apr,22.99))
-    const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
+    const firstPay = getEffectiveMinPay(sortedForFirst[0]) + extra
     document.getElementById('rec-verdict').textContent = 'Avalanche method: pay highest-interest debt first.'
     document.getElementById('rec-why').textContent = 'Targets the account charging you the most interest. You\'ll be debt-free by ' + fmtDate(avaFull.months) + ' and save ' + fmt(intSavedAva) + ' in interest versus paying minimums only.' + previewCaveat
     document.getElementById('rec-tradeoff').textContent = 'Mathematically optimal for minimizing total interest paid. Requires discipline — early wins may be slow if your highest-rate debt also has a large balance.'
@@ -2344,7 +2351,7 @@ function selectMethod(key) {
 
   } else if (key === 'snowball') {
     const sortedForFirst = [...debts].sort((a,b) => Number(a.balance)-Number(b.balance))
-    const firstPay = (Number(sortedForFirst[0]?.minPay) || 0) + extra
+    const firstPay = getEffectiveMinPay(sortedForFirst[0]) + extra
     document.getElementById('rec-verdict').textContent = 'Snowball method: pay smallest balance first.'
     document.getElementById('rec-why').textContent = 'Eliminates accounts quickly to build momentum. You\'ll be debt-free by ' + fmtDate(snowFull.months) + ' and save ' + fmt(intSavedSnow) + ' in interest versus paying minimums only.' + previewCaveat
     document.getElementById('rec-tradeoff').textContent = 'Provides faster early wins that help maintain motivation. May cost slightly more in total interest than avalanche if your smallest balance is not your highest-rate debt.'
@@ -2356,7 +2363,7 @@ function selectMethod(key) {
 
   } else if (key === 'minimums') {
     const sortedForFirst = [...debts].sort((a,b) => avaBetter ? numOr(b.apr,22.99)-numOr(a.apr,22.99) : Number(a.balance)-Number(b.balance))
-    const firstPay = Number(sortedForFirst[0]?.minPay) || 0
+    const firstPay = getEffectiveMinPay(sortedForFirst[0])
     document.getElementById('rec-verdict').textContent = 'Minimum payments only. The most expensive path.'
     document.getElementById('rec-why').textContent = 'No extra payment applied. Each account is paid at its entered minimum until the balance reaches zero. At this pace you are debt free by ' + fmtDate(minimums.months) + ' and pay ' + fmt(minimums.totalInterest) + ' in total interest.'
     document.getElementById('rec-tradeoff').textContent = 'This path costs the most in interest and takes the longest. Consider even a small extra payment to accelerate your timeline.'
