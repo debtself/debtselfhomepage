@@ -1776,6 +1776,7 @@ function recalculate(animateDate = false) {
   const intSavedRec = avaBetter ? intSavedAva : intSavedSnow
   const method = avaBetter ? 'avalanche' : 'snowball'
   const debtsForPlan = avaBetter ? debtsAva : debtsSnow
+  const se = calculateSettlementEstimate(totalDebt)
 
   // Score ring
   const hasUtilData = totalLim > 0
@@ -1799,17 +1800,35 @@ function recalculate(animateDate = false) {
   // Contrast cards
   const minMonths = minimums.months
   const recMonths = recommendedRun.months
-  const monthDiff = Math.max(0, minMonths - recMonths)
-  const yrs = Math.floor(monthDiff / 12)
-  const mos = monthDiff % 12
-  const diffText = yrs > 0 && mos > 0 ? yrs + ' yr ' + mos + ' mo sooner' : yrs > 0 ? yrs + ' year' + (yrs>1?'s':'') + ' sooner' : mos > 0 ? mos + ' month' + (mos>1?'s':'') + ' sooner' : ''
   document.getElementById('contrast-min-date').textContent = fmtDate(minMonths)
   document.getElementById('contrast-min-int').textContent = fmt(minimums.totalInterest) + ' in interest'
-  document.getElementById('contrast-rec-label').textContent = (recMode === 'deficit' || recMode === 'settlement') ? 'WITHOUT SETTLEMENT' : recMode === 'consolidation' ? 'WITHOUT CONSOLIDATION' : 'YOUR PLAN'
-  document.getElementById('contrast-rec-date').textContent = fmtDate(recMonths)
-  document.getElementById('contrast-rec-saved').textContent = 'Save ' + fmt(intSavedRec)
-  document.getElementById('contrast-rec-method').textContent = avaBetter ? 'Avalanche method' : 'Snowball method'
-  document.getElementById('contrast-diff').textContent = diffText
+  if (showFullPlan) {
+    const monthDiff = Math.max(0, minMonths - recMonths)
+    const yrs = Math.floor(monthDiff / 12)
+    const mos = monthDiff % 12
+    const diffText = yrs > 0 && mos > 0 ? yrs + ' yr ' + mos + ' mo sooner' : yrs > 0 ? yrs + ' year' + (yrs>1?'s':'') + ' sooner' : mos > 0 ? mos + ' month' + (mos>1?'s':'') + ' sooner' : ''
+    document.getElementById('contrast-rec-label').textContent = recMode === 'consolidation' ? 'WITHOUT CONSOLIDATION' : 'YOUR PLAN'
+    document.getElementById('contrast-rec-date').textContent = fmtDate(recMonths)
+    document.getElementById('contrast-rec-saved').textContent = 'Save ' + fmt(intSavedRec)
+    document.getElementById('contrast-rec-method').textContent = avaBetter ? 'Avalanche method' : 'Snowball method'
+    document.getElementById('contrast-diff').textContent = diffText
+  } else if (recMode === 'settlement') {
+    const settleMonthDiff = Math.max(0, minMonths - se.standardMonths)
+    const settleYrs = Math.floor(settleMonthDiff / 12)
+    const settleMos = settleMonthDiff % 12
+    const settleDiffText = settleYrs > 0 && settleMos > 0 ? settleYrs + ' yr ' + settleMos + ' mo sooner' : settleYrs > 0 ? settleYrs + ' year' + (settleYrs>1?'s':'') + ' sooner' : settleMos > 0 ? settleMos + ' month' + (settleMos>1?'s':'') + ' sooner' : ''
+    document.getElementById('contrast-rec-label').textContent = 'WITH SETTLEMENT'
+    document.getElementById('contrast-rec-date').textContent = fmtDate(se.standardMonths)
+    document.getElementById('contrast-rec-saved').textContent = 'You keep ' + fmt(youKeep)
+    document.getElementById('contrast-rec-method').textContent = 'Debt settlement'
+    document.getElementById('contrast-diff').textContent = settleDiffText
+  } else {
+    document.getElementById('contrast-rec-label').textContent = 'BUDGET REVIEW NEEDED'
+    document.getElementById('contrast-rec-date').textContent = '—'
+    document.getElementById('contrast-rec-saved').textContent = '—'
+    document.getElementById('contrast-rec-method').textContent = 'No payoff or settlement plan is realistic yet'
+    document.getElementById('contrast-diff').textContent = ''
+  }
 
   // Debt Freedom Dashboard
   const dashSection = document.getElementById('dashboard-section')
@@ -1937,7 +1956,6 @@ function recalculate(animateDate = false) {
   populateCompareModal(compareData)
 
   // CTA
-  const se = calculateSettlementEstimate(totalDebt)
   const ctaHtml = '<div class="res-ds-block"><div class="res-ds-eyebrow">IF DEBT SETTLEMENT IS THE RIGHT PATH FOR YOU</div><div class="res-ds-headline">Settlement companies charge ' + fmt(coFee) + ' to manage your balance.</div><div class="res-ds-sub">debtself gives you the exact same process: word-for-word scripts, creditor intelligence, and a full settlement platform, for $249 flat. A traditional company would charge around ' + fmt(se.companyMonthlyPayment) + '/mo over the standard ' + se.standardMonths + '-month program. Keep that same payment with debtself and you could be done in about ' + se.debtselfFastMonths + ' months instead — or pay less, around ' + fmt(se.debtselfLowPayment) + '/mo, and still finish in the same ' + se.standardMonths + ' months.</div><div class="res-ds-keep">Est. fees you avoid: <span class="res-ds-keep-num">' + fmt(youKeep) + '</span></div><a class="res-ds-btn" href="https://app.debtself.com?utm_source=planner&utm_medium=cta" onclick="trackPlannerCTA(event)">See how much you\'d keep →</a></div>'
   const consolidationEarlyHtml = '<div class="odds-box ' + odds.level + '"><div class="odds-title">' + odds.label + ': ' + odds.rate + '</div><div class="odds-text">' + odds.text + '</div></div>'
   document.getElementById('ds-wrap-early').innerHTML = (recMode === 'deficit' || recMode === 'settlement') ? ctaHtml : recMode === 'consolidation' ? consolidationEarlyHtml : ''
