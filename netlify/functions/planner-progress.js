@@ -46,7 +46,7 @@ exports.handler = async (event) => {
 
     const { data: progress, error: progressError } = await supabase
       .from('planner_progress')
-      .select('debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months, updated_at')
+      .select('debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months, baseline_total_debt, updated_at')
       .eq('session_token', session_token)
       .maybeSingle()
 
@@ -73,6 +73,7 @@ exports.handler = async (event) => {
           credit_score: progress.credit_score,
           baseline_interest_saved: progress.baseline_interest_saved,
           baseline_min_months: progress.baseline_min_months,
+          baseline_total_debt: progress.baseline_total_debt,
           updated_at: progress.updated_at,
         },
       }),
@@ -87,7 +88,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Invalid request' }) }
   }
 
-  const { session_token, debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months } = body
+  const { session_token, debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months, baseline_total_debt } = body
 
   if (!session_token) {
     return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'session_token is required' }) }
@@ -116,7 +117,7 @@ exports.handler = async (event) => {
   // Fetch existing row before writing
   const { data: existing } = await supabase
     .from('planner_progress')
-    .select('method_locked, locked_method, months_completed, baseline_interest_saved, baseline_min_months')
+    .select('method_locked, locked_method, months_completed, baseline_interest_saved, baseline_min_months, baseline_total_debt')
     .eq('session_token', session_token)
     .maybeSingle()
 
@@ -133,6 +134,9 @@ exports.handler = async (event) => {
   const savedBaselineMinMonths = existing?.baseline_min_months != null
     ? existing.baseline_min_months
     : (baseline_min_months ?? null)
+  const savedBaselineTotalDebt = existing?.baseline_total_debt != null
+    ? existing.baseline_total_debt
+    : (baseline_total_debt ?? null)
 
   const upsertPayload = {
     session_token,
@@ -145,6 +149,7 @@ exports.handler = async (event) => {
     credit_score: normalizedCreditScore,
     baseline_interest_saved: savedBaselineInterestSaved,
     baseline_min_months: savedBaselineMinMonths,
+    baseline_total_debt: savedBaselineTotalDebt,
     updated_at: new Date().toISOString(),
   }
 

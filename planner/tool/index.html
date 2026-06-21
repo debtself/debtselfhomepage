@@ -365,6 +365,19 @@
     .edit-input { border:none; border-bottom:1.5px solid var(--red); background:transparent; font-family:var(--mono); font-size:13px; color:var(--dark); outline:none; width:80px; }
     .edit-done { background:var(--red); color:white; border:none; border-radius:5px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; margin-left:6px; touch-action:manipulation; }
 
+    /* Debt Freedom Dashboard */
+    .dashboard-section { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:20px; }
+    .dashboard-eyebrow { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.16em; text-transform:uppercase; margin-bottom:14px; }
+    .dashboard-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+    .dashboard-stat-lbl { font-family:var(--mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+    .dashboard-stat-val { font-size:18px; font-weight:700; color:var(--dark); }
+    .dashboard-stat-red { color:var(--red); }
+    .dashboard-paid-row { display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:14px; margin-bottom:10px; }
+    .dashboard-paid-lbl { font-family:var(--mono); font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px; }
+    .dashboard-paid-val { font-size:16px; font-weight:700; color:var(--dark); }
+    .dashboard-bar-track { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+    .dashboard-bar-fill { height:100%; background:var(--red); border-radius:4px; transition:width 0.4s ease; }
+
     /* Block 2 */
     .res-stats { display:flex; gap:12px; }
     .res-stat { background:#FFFFFF; border:1px solid #E8E4DC; border-radius:12px; padding:16px; flex:1; }
@@ -748,6 +761,40 @@
 ═══════════════════════════════ -->
 <div id="s-results" class="screen">
   <div class="res-wrap">
+
+    <!-- BLOCK 0: DEBT FREEDOM DASHBOARD -->
+    <div class="dashboard-section" id="dashboard-section" style="display:none;">
+      <div class="dashboard-eyebrow">YOUR DEBT FREEDOM DASHBOARD</div>
+      <div class="dashboard-grid">
+        <div class="dashboard-stat">
+          <div class="dashboard-stat-lbl">Progress</div>
+          <div class="dashboard-stat-val" id="dash-progress-pct"></div>
+        </div>
+        <div class="dashboard-stat">
+          <div class="dashboard-stat-lbl">Debt remaining</div>
+          <div class="dashboard-stat-val" id="dash-debt-remaining"></div>
+        </div>
+        <div class="dashboard-stat">
+          <div class="dashboard-stat-lbl">Projected interest savings</div>
+          <div class="dashboard-stat-val dashboard-stat-red" id="dash-interest-savings"></div>
+        </div>
+        <div class="dashboard-stat">
+          <div class="dashboard-stat-lbl">Debt free by</div>
+          <div class="dashboard-stat-val" id="dash-debt-free-date"></div>
+        </div>
+      </div>
+      <div class="dashboard-paid-row" id="dashboard-paid-row" style="display:none;">
+        <div class="dashboard-paid-col">
+          <div class="dashboard-paid-lbl">Starting debt</div>
+          <div class="dashboard-paid-val" id="dash-starting-debt"></div>
+        </div>
+        <div class="dashboard-paid-col">
+          <div class="dashboard-paid-lbl">Paid off so far</div>
+          <div class="dashboard-paid-val dashboard-stat-red" id="dash-paid-off"></div>
+        </div>
+      </div>
+      <div class="dashboard-bar-track" id="dashboard-bar-track" style="display:none;"><div class="dashboard-bar-fill" id="dash-bar-fill"></div></div>
+    </div>
 
     <!-- BLOCK 0A: ACCOUNTS SUMMARY (editable) -->
     <div class="accounts-summary" id="accounts-summary"></div>
@@ -1715,6 +1762,37 @@ function recalculate(animateDate = false) {
   document.getElementById('contrast-rec-method').textContent = avaBetter ? 'Avalanche method' : 'Snowball method'
   document.getElementById('contrast-diff').textContent = diffText
 
+  // Debt Freedom Dashboard
+  const dashSection = document.getElementById('dashboard-section')
+  if (liveState.methodLocked) {
+    dashSection.style.display = ''
+    document.getElementById('dash-debt-remaining').textContent = fmt(totalDebt)
+    document.getElementById('dash-interest-savings').textContent = fmt(liveState.baselineInterestSaved || 0)
+    document.getElementById('dash-debt-free-date').textContent = fmtDate(recMonths)
+
+    const hasBaselineDebt = liveState.baselineTotalDebt != null
+    const paidOffRow = document.getElementById('dashboard-paid-row')
+    const barTrack = document.getElementById('dashboard-bar-track')
+    if (hasBaselineDebt) {
+      const paidOff = Math.max(0, liveState.baselineTotalDebt - totalDebt)
+      const dollarProgressPct = liveState.baselineTotalDebt > 0 ? Math.round((paidOff / liveState.baselineTotalDebt) * 100) : 0
+      document.getElementById('dash-progress-pct').textContent = dollarProgressPct + '%'
+      document.getElementById('dash-starting-debt').textContent = fmt(liveState.baselineTotalDebt)
+      document.getElementById('dash-paid-off').textContent = fmt(paidOff)
+      document.getElementById('dash-bar-fill').style.width = Math.min(100, dollarProgressPct) + '%'
+      paidOffRow.style.display = ''
+      barTrack.style.display = ''
+    } else {
+      const dashTotalMonths = liveState.monthsCompleted + recMonths
+      const dashMonthsPct = dashTotalMonths > 0 ? Math.round((liveState.monthsCompleted / dashTotalMonths) * 100) : 0
+      document.getElementById('dash-progress-pct').textContent = dashMonthsPct + '%'
+      paidOffRow.style.display = 'none'
+      barTrack.style.display = 'none'
+    }
+  } else {
+    dashSection.style.display = 'none'
+  }
+
   // Rec card
   const recParams = {available, minimums, highestApr, totalDebt, totalUtil, ccDebts, debts, creditScore: liveState.creditScore, showSettlement, recMonths: recommendedRun.months}
   const rec = generateRecContent(extra, avaFull, snowFull, recParams)
@@ -1850,6 +1928,7 @@ function buildResults() {
     monthsCompleted: 0,
     baselineInterestSaved: calcD.minimums.totalInterest - (calcD.avalanche.totalInterest <= calcD.snowball.totalInterest ? calcD.avalanche : calcD.snowball).totalInterest,
     baselineMinMonths: calcD.minimums.months,
+    baselineTotalDebt: totalDebt,
   }
 
   const slider = document.getElementById('extra-slider')
@@ -2265,6 +2344,7 @@ function hydrateAndShowResults(progress) {
     monthsCompleted: progress.months_completed,
     baselineInterestSaved: progress.baseline_interest_saved,
     baselineMinMonths: progress.baseline_min_months,
+    baselineTotalDebt: progress.baseline_total_debt,
   }
 
   const totalMin = progress.debts.reduce((s, d) => s + (Number(d.minPay) || getMin(Number(d.balance), Number(d.apr))), 0)
@@ -2302,6 +2382,7 @@ function _buildProgressPayload() {
     months_completed: liveState.monthsCompleted,
     baseline_interest_saved: liveState.baselineInterestSaved,
     baseline_min_months: liveState.baselineMinMonths,
+    baseline_total_debt: liveState.baselineTotalDebt,
   }
 }
 
