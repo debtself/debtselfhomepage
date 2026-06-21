@@ -312,6 +312,17 @@
     .score-label { font-size:11px; color:var(--muted); margin-top:4px; font-family:var(--mono); letter-spacing:0.08em; }
     .score-title { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.16em; text-transform:uppercase; margin-bottom:8px; }
     .score-factors { font-size:13px; color:var(--muted); text-align:center; line-height:1.6; max-width:280px; }
+    .score-explain-toggle { background:none; border:none; font-family:var(--sans); font-size:12px; font-weight:600; color:var(--red); cursor:pointer; margin-top:14px; padding:6px 4px; display:flex; align-items:center; gap:6px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .score-explain-arrow { font-size:9px; transition:transform 0.2s; }
+    .score-explain-arrow.open { transform:rotate(180deg); }
+    .score-explain-body { display:none; width:100%; max-width:320px; text-align:left; margin-top:8px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+    .score-explain-body.open { display:block; }
+    .score-explain-row { display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; }
+    .score-explain-row:first-child { margin-top:0; }
+    .score-explain-label { font-size:13px; font-weight:600; color:var(--dark); }
+    .score-explain-pts { font-family:var(--mono); font-size:11px; color:var(--red); font-weight:600; }
+    .score-explain-desc { font-size:12px; color:var(--muted); line-height:1.5; margin-top:2px; }
+    .score-explain-note { font-size:11px; color:var(--muted); line-height:1.6; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); display:none; }
 
     /* Side-by-side contrast */
     .contrast-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -813,6 +824,19 @@
       </div>
       <div class="score-title">YOUR DEBT FREEDOM SCORE</div>
       <div class="score-factors" id="score-factors"></div>
+      <button class="score-explain-toggle" onclick="toggleScoreExplain()" touch-action="manipulation">How is this calculated <span class="score-explain-arrow" id="score-explain-arrow">▼</span></button>
+      <div class="score-explain-body" id="score-explain-body">
+        <div class="score-explain-row"><span class="score-explain-label">Payoff timeline</span><span class="score-explain-pts">30 pts</span></div>
+        <div class="score-explain-desc">A faster realistic path to debt free raises your score.</div>
+        <div class="score-explain-row" id="score-explain-util-row"><span class="score-explain-label">Credit utilization</span><span class="score-explain-pts">20 pts</span></div>
+        <div class="score-explain-desc" id="score-explain-util-desc">Lower balances relative to your credit limits raise your score.</div>
+        <div class="score-explain-row"><span class="score-explain-label">Monthly margin</span><span class="score-explain-pts">30 pts</span></div>
+        <div class="score-explain-desc">More cash available each month above your minimum payments raises your score.</div>
+        <div class="score-explain-row"><span class="score-explain-label">Weighted average APR</span><span class="score-explain-pts">20 pts</span></div>
+        <div class="score-explain-desc">Lower interest rates across your accounts raise your score.</div>
+        <div class="score-explain-note" id="score-explain-util-note">Utilization is not included in your score since credit limits were not provided. The other three factors are rescaled so your score is still out of 100.</div>
+        <div class="score-explain-note" id="score-explain-deficit-note">When your budget does not currently cover your expenses, your score is capped in the Critical range regardless of these factors. That needs to be addressed before timeline, margin, utilization, or rate improvements can move your score.</div>
+      </div>
     </div>
 
     <!-- BLOCK 1: SIDE BY SIDE CONTRAST -->
@@ -1502,6 +1526,30 @@ function updateScoreRing(score, label, color, factorsHtml) {
   fill.style.strokeDashoffset = 326.7 - (score / 100 * 326.7)
 }
 
+function updateScoreExplain(hasUtilData, recMode) {
+  const utilRow = document.getElementById('score-explain-util-row')
+  const utilDesc = document.getElementById('score-explain-util-desc')
+  const utilNote = document.getElementById('score-explain-util-note')
+  const deficitNote = document.getElementById('score-explain-deficit-note')
+  if (hasUtilData) {
+    if (utilRow) utilRow.style.display = ''
+    if (utilDesc) utilDesc.style.display = ''
+    if (utilNote) utilNote.style.display = 'none'
+  } else {
+    if (utilRow) utilRow.style.display = 'none'
+    if (utilDesc) utilDesc.style.display = 'none'
+    if (utilNote) utilNote.style.display = 'block'
+  }
+  if (deficitNote) deficitNote.style.display = recMode === 'deficit' ? 'block' : 'none'
+}
+
+function toggleScoreExplain() {
+  const body = document.getElementById('score-explain-body')
+  const arrow = document.getElementById('score-explain-arrow')
+  const open = body.classList.toggle('open')
+  arrow.classList.toggle('open', open)
+}
+
 // ═══════════════════════════════════════
 //  LUMP SUM HELPER (non-mutating)
 // ═══════════════════════════════════════
@@ -1746,6 +1794,7 @@ function recalculate(animateDate = false) {
     ? belowMax.map(f => '<div>' + factorMessages[f.key] + '</div>').join('')
     : '<div>Every factor here is already working in your favor.</div>'
   updateScoreRing(score, scoreLabel, scoreColor, dragHtml)
+  updateScoreExplain(hasUtilData, recMode)
 
   // Contrast cards
   const minMonths = minimums.months
