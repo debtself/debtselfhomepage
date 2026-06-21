@@ -1593,7 +1593,7 @@ function applyLumpSumToDebts(debts, lumpSum, method) {
 function advanceOneMonth(debts, extra, method) {
   const copied = debts.map(d => ({...d, balance: Number(d.balance)}))
   const active = copied.filter(d => d.balance > 0)
-  if (!active.length) return { debts: copied, paidOffIds: [] }
+  if (!active.length) return { debts: copied, paidOffIds: [], interestThisMonth: 0 }
 
   method === 'avalanche'
     ? active.sort((a,b) => numOr(b.apr,22.99) - numOr(a.apr,22.99))
@@ -1601,19 +1601,22 @@ function advanceOneMonth(debts, extra, method) {
 
   const targetId = active[0].id || active[0].name
 
+  let interestThisMonth = 0
   active.forEach(d => {
     const r = numOr(d.apr,22.99) / 100 / 12
     const minInt = d.balance * r
     const effectiveMin = Math.max(Number(d.minPay) || getMin(d.balance, Number(d.apr)), minInt + 1)
     const isTarget = (d.id || d.name) === targetId
-    d.balance = d.balance * (1 + r)
+    const interestCharge = d.balance * r
+    d.balance = d.balance + interestCharge
+    interestThisMonth += interestCharge
     const pay = Math.min(effectiveMin + (isTarget ? (extra || 0) : 0), d.balance)
     d.balance = Math.max(0, d.balance - pay)
     if (d.balance < 0.01) d.balance = 0
   })
 
   const paidOffIds = active.filter(d => d.balance === 0).map(d => d.id || d.name)
-  return { debts: copied, paidOffIds }
+  return { debts: copied, paidOffIds, interestThisMonth }
 }
 
 // ═══════════════════════════════════════
@@ -1854,7 +1857,8 @@ function recalculate(animateDate = false) {
   if (liveState.methodLocked) {
     dashSection.style.display = ''
     document.getElementById('dash-debt-remaining').textContent = fmt(totalDebt)
-    document.getElementById('dash-interest-savings').textContent = fmt(liveState.baselineInterestSaved || 0)
+    const trueInterestSaved = Math.max(0, (liveState.baselineMinTotalInterest||0) - (liveState.actualInterestPaid||0))
+    document.getElementById('dash-interest-savings').textContent = fmt(trueInterestSaved)
     document.getElementById('dash-debt-free-date').textContent = fmtDate(recMonths)
 
     const hasBaselineDebt = liveState.baselineTotalDebt != null
@@ -2015,6 +2019,8 @@ function buildResults() {
     baselineInterestSaved: calcD.minimums.totalInterest - (calcD.avalanche.totalInterest <= calcD.snowball.totalInterest ? calcD.avalanche : calcD.snowball).totalInterest,
     baselineMinMonths: calcD.minimums.months,
     baselineTotalDebt: totalDebt,
+    baselineMinTotalInterest: calcD.minimums.totalInterest,
+    actualInterestPaid: 0,
   }
 
   const slider = document.getElementById('extra-slider')
@@ -2159,6 +2165,7 @@ function applyMonthPayment(oneTimeExtra = 0) {
   const result = advanceOneMonth(liveState.debts, liveState.extra + oneTimeExtra, liveState.lockedMethod)
   liveState.debts = result.debts
   liveState.monthsCompleted += 1
+  liveState.actualInterestPaid = (liveState.actualInterestPaid || 0) + result.interestThisMonth
   recalculate(true)
   if (result.paidOffIds.length > 0) {
     const remaining = liveState.debts.filter(d => Number(d.balance) > 0)
@@ -2216,7 +2223,8 @@ function showDebtFreeCelebration() {
   const timeSavedEl = document.getElementById('debtfree-time-saved')
   if (timeSavedEl) timeSavedEl.textContent = diffText
   go('s-debtfree', 6)
-  animateDebtFreeTicker(liveState.baselineInterestSaved || 0)
+  const trueInterestSaved = Math.max(0, (liveState.baselineMinTotalInterest||0) - (liveState.actualInterestPaid||0))
+  animateDebtFreeTicker(trueInterestSaved)
 }
 
 function onSliderInput() {
@@ -2431,6 +2439,8 @@ function hydrateAndShowResults(progress) {
     baselineInterestSaved: progress.baseline_interest_saved,
     baselineMinMonths: progress.baseline_min_months,
     baselineTotalDebt: progress.baseline_total_debt,
+    baselineMinTotalInterest: progress.baseline_min_total_interest || 0,
+    actualInterestPaid: progress.actual_interest_paid || 0,
   }
 
   const totalMin = progress.debts.reduce((s, d) => s + (Number(d.minPay) || getMin(Number(d.balance), Number(d.apr))), 0)
@@ -2469,6 +2479,8 @@ function _buildProgressPayload() {
     baseline_interest_saved: liveState.baselineInterestSaved,
     baseline_min_months: liveState.baselineMinMonths,
     baseline_total_debt: liveState.baselineTotalDebt,
+    baseline_min_total_interest: liveState.baselineMinTotalInterest,
+    actual_interest_paid: liveState.actualInterestPaid,
   }
 }
 
