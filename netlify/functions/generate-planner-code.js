@@ -30,13 +30,13 @@ function buildEmail(email, code) {
     html: `
       <!DOCTYPE html>
       <html>
-      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>
       <body style="margin:0;padding:0;background:#F7F5F0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         <div style="max-width:520px;margin:0 auto;padding:32px 16px;">
 
           <div style="background:#FFFFFF;border-radius:16px;padding:32px;border:1px solid #E8E4DC;">
-            <div style="background:#0A0E12;padding:16px 24px;border-radius:10px 10px 0 0;margin:-32px -32px 24px -32px;">
-              <img src="https://debtself.com/assets/dark-wordmark.png" alt="debt/self" width="107" height="28" style="height:28px;width:107px;display:block;margin-bottom:8px;" />
+            <div style="margin:-32px -32px 24px -32px;">
+              <img src="https://debtself.com/assets/dark-header-lockup.png" alt="debt/self" width="520" height="68" style="width:100%;height:auto;display:block;border-radius:10px 10px 0 0;" />
             </div>
 
             <div style="font-size:11px;font-weight:700;color:#FF4D2E;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:12px;">Your access code</div>
