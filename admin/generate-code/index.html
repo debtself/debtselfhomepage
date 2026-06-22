@@ -134,6 +134,21 @@
     .status-line.warn strong {
       color: #FF4D2E;
     }
+    button#resend-btn {
+      padding: 8px 18px;
+      background: #FF4D2E;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button#resend-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     #error-msg {
       margin-top: 16px;
       display: none;
@@ -166,6 +181,13 @@
 
     <div id="error-msg"></div>
 
+    <div id="confirm-prompt" style="display:none;margin-top:20px;background:#F7F5F0;border:1px solid #E8E4DC;border-radius:10px;padding:16px 18px;">
+      <div style="font-size:13px;color:#0A0E12;line-height:1.6;margin-bottom:12px;">
+        An active code already exists for this email: <span id="confirm-code" style="font-family:'Courier New',Courier,monospace;font-weight:700;font-size:14px;"></span>. Click Resend to email it again.
+      </div>
+      <button id="resend-btn" type="button">Resend</button>
+    </div>
+
     <div id="result">
       <div class="code-box">
         <div class="code-label">Access code</div>
@@ -177,14 +199,17 @@
   </div>
 
   <script>
-    const secretInput = document.getElementById('secret-input')
-    const emailInput  = document.getElementById('email-input')
-    const submitBtn   = document.getElementById('submit-btn')
-    const errorMsg    = document.getElementById('error-msg')
-    const resultEl    = document.getElementById('result')
-    const codeDisplay = document.getElementById('code-display')
-    const statusLine  = document.getElementById('status-line')
-    const copyBtn     = document.getElementById('copy-btn')
+    const secretInput   = document.getElementById('secret-input')
+    const emailInput    = document.getElementById('email-input')
+    const submitBtn     = document.getElementById('submit-btn')
+    const errorMsg      = document.getElementById('error-msg')
+    const confirmPrompt = document.getElementById('confirm-prompt')
+    const confirmCode   = document.getElementById('confirm-code')
+    const resendBtn     = document.getElementById('resend-btn')
+    const resultEl      = document.getElementById('result')
+    const codeDisplay   = document.getElementById('code-display')
+    const statusLine    = document.getElementById('status-line')
+    const copyBtn       = document.getElementById('copy-btn')
 
     // Restore secret from sessionStorage
     const savedSecret = sessionStorage.getItem('admin_secret')
@@ -194,6 +219,7 @@
       errorMsg.textContent = msg
       errorMsg.style.display = 'block'
       resultEl.style.display = 'none'
+      confirmPrompt.style.display = 'none'
     }
 
     function clearError() {
@@ -201,67 +227,73 @@
       errorMsg.textContent = ''
     }
 
-    submitBtn.addEventListener('click', async () => {
+    function showSuccess(json) {
+      sessionStorage.setItem('admin_secret', secretInput.value.trim())
+      codeDisplay.textContent = json.code
+      copyBtn.textContent = 'Copy'
+      const parts = []
+      if (json.reused) parts.push('<strong>Existing unredeemed code reused</strong>, no new row inserted.')
+      else parts.push('<strong>New code generated</strong> and saved to the database.')
+      if (json.email_sent) {
+        parts.push('Email sent successfully.')
+      } else {
+        parts.push('<strong style="color:#FF4D2E">Email failed to send.</strong> Copy the code above and send it manually.')
+      }
+      statusLine.className = json.email_sent ? 'status-line' : 'status-line warn'
+      statusLine.innerHTML = parts.join(' ')
+      confirmPrompt.style.display = 'none'
+      resultEl.style.display = 'block'
+      emailInput.value = ''
+    }
+
+    async function postToEndpoint(payload, btn, loadingText, resetText) {
+      btn.disabled = true
+      btn.textContent = loadingText
       clearError()
-      const secret = secretInput.value.trim()
-      const email  = emailInput.value.trim()
-
-      if (!secret) { showError('Admin secret is required.'); return }
-      if (!email || !email.includes('@')) { showError('A valid email address is required.'); return }
-
-      submitBtn.disabled = true
-      submitBtn.textContent = 'Sending...'
-      resultEl.style.display = 'none'
-
       try {
         const res = await fetch('/.netlify/functions/generate-planner-code', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ secret, email }),
+          body: JSON.stringify(payload),
         })
-
         const json = await res.json()
-
-        if (res.status === 401) {
-          showError('Incorrect admin secret.')
-          return
-        }
-        if (res.status === 400) {
-          showError(json.error || 'Bad request, check the email address.')
-          return
-        }
-        if (!res.ok || !json.success) {
-          showError(json.error || 'Server error, code was not generated.')
-          return
-        }
-
-        // Success — persist secret for this session
-        sessionStorage.setItem('admin_secret', secret)
-
-        codeDisplay.textContent = json.code
-        copyBtn.textContent = 'Copy'
-
-        const parts = []
-        if (json.reused) parts.push('<strong>Existing unredeemed code reused</strong>, no new row inserted.')
-        else parts.push('<strong>New code generated</strong> and saved to the database.')
-
-        if (json.email_sent) {
-          parts.push('Email sent successfully.')
-        } else {
-          parts.push('<strong style="color:#FF4D2E">Email failed to send.</strong> Copy the code above and send it manually.')
-        }
-
-        statusLine.className = json.email_sent ? 'status-line' : 'status-line warn'
-        statusLine.innerHTML = parts.join(' ')
-        resultEl.style.display = 'block'
-        emailInput.value = ''
-
+        if (res.status === 401) { showError('Incorrect admin secret.'); return }
+        if (res.status === 400) { showError(json.error || 'Bad request, check the email address.'); return }
+        if (!res.ok || !json.success) { showError(json.error || 'Server error, code was not generated.'); return }
+        return json
       } catch (err) {
         showError('Network error, request did not complete.')
       } finally {
-        submitBtn.disabled = false
-        submitBtn.textContent = 'Generate & Send'
+        btn.disabled = false
+        btn.textContent = resetText
       }
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      const secret = secretInput.value.trim()
+      const email  = emailInput.value.trim()
+      if (!secret) { showError('Admin secret is required.'); return }
+      if (!email || !email.includes('@')) { showError('A valid email address is required.'); return }
+      resultEl.style.display = 'none'
+      confirmPrompt.style.display = 'none'
+
+      const json = await postToEndpoint({ secret, email, confirm: false }, submitBtn, 'Sending...', 'Generate & Send')
+      if (!json) return
+
+      if (json.needs_confirmation) {
+        confirmCode.textContent = json.code
+        confirmPrompt.style.display = 'block'
+        return
+      }
+      showSuccess(json)
+    })
+
+    resendBtn.addEventListener('click', async () => {
+      const secret = secretInput.value.trim()
+      const email  = emailInput.value.trim()
+      const json = await postToEndpoint({ secret, email, confirm: true }, resendBtn, 'Sending...', 'Resend')
+      if (!json) return
+      showSuccess(json)
     })
 
     copyBtn.addEventListener('click', () => {

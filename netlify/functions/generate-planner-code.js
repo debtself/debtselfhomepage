@@ -79,11 +79,12 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) }
   }
 
-  let secret, email
+  let secret, email, confirm
   try {
     const body = JSON.parse(event.body || '{}')
     secret = body.secret
     email = (body.email || '').trim().toLowerCase()
+    confirm = !!body.confirm
   } catch {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }
   }
@@ -111,6 +112,14 @@ exports.handler = async (event) => {
 
   let code
   let reused = false
+
+  if (existing && !confirm) {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, code: existing.code, reused: true, needs_confirmation: true, email_sent: false }),
+    }
+  }
 
   if (existing) {
     code = existing.code
