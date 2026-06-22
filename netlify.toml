@@ -15,3 +15,9 @@
   from = "/planner/tool"
   to = "/planner/tool/index.html"
   status = 200
+
+# Redirect /admin/generate-code to the admin code generation tool
+[[redirects]]
+  from = "/admin/generate-code"
+  to = "/admin/generate-code/index.html"
+  status = 200

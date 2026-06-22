@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>debtself — Generate Planner Code</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #F7F5F0;
+      color: #0A0E12;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 48px 16px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #E8E4DC;
+      border-radius: 16px;
+      padding: 36px;
+      width: 100%;
+      max-width: 480px;
+    }
+    .header {
+      border-bottom: 1px solid #E8E4DC;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+    }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FF4D2E;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0A0E12;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0A0E12;
+      margin-bottom: 6px;
+    }
+    input {
+      display: block;
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 14px;
+      border: 1px solid #E8E4DC;
+      border-radius: 8px;
+      background: #fff;
+      color: #0A0E12;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus {
+      border-color: #FF4D2E;
+    }
+    .field {
+      margin-bottom: 20px;
+    }
+    button#submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #FF4D2E;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button#submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    #result {
+      margin-top: 28px;
+      display: none;
+    }
+    .code-box {
+      background: #F7F5F0;
+      border: 1px solid #E8E4DC;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .code-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #6B7280;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .code-value {
+      font-size: 30px;
+      font-weight: 700;
+      font-family: 'Courier New', Courier, monospace;
+      letter-spacing: 0.1em;
+      color: #0A0E12;
+      margin-bottom: 14px;
+    }
+    button#copy-btn {
+      padding: 7px 18px;
+      background: #0A0E12;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button#copy-btn:active { opacity: 0.7; }
+    .status-line {
+      font-size: 13px;
+      color: #6B7280;
+      line-height: 1.5;
+    }
+    .status-line strong {
+      color: #0A0E12;
+    }
+    .status-line.warn strong {
+      color: #FF4D2E;
+    }
+    #error-msg {
+      margin-top: 16px;
+      display: none;
+      background: rgba(255,77,46,0.08);
+      border: 1px solid rgba(255,77,46,0.25);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #FF4D2E;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="eyebrow">Admin</div>
+      <h1>Generate Planner Code</h1>
+    </div>
+
+    <div class="field">
+      <label for="secret-input">Admin secret</label>
+      <input type="password" id="secret-input" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <div class="field">
+      <label for="email-input">Buyer email</label>
+      <input type="email" id="email-input" placeholder="buyer@example.com" autocomplete="off" />
+    </div>
+    <button id="submit-btn" type="button">Generate &amp; Send</button>
+
+    <div id="error-msg"></div>
+
+    <div id="result">
+      <div class="code-box">
+        <div class="code-label">Access code</div>
+        <div class="code-value" id="code-display"></div>
+        <button id="copy-btn" type="button">Copy</button>
+      </div>
+      <div class="status-line" id="status-line"></div>
+    </div>
+  </div>
+
+  <script>
+    const secretInput = document.getElementById('secret-input')
+    const emailInput  = document.getElementById('email-input')
+    const submitBtn   = document.getElementById('submit-btn')
+    const errorMsg    = document.getElementById('error-msg')
+    const resultEl    = document.getElementById('result')
+    const codeDisplay = document.getElementById('code-display')
+    const statusLine  = document.getElementById('status-line')
+    const copyBtn     = document.getElementById('copy-btn')
+
+    // Restore secret from sessionStorage
+    const savedSecret = sessionStorage.getItem('admin_secret')
+    if (savedSecret) secretInput.value = savedSecret
+
+    function showError(msg) {
+      errorMsg.textContent = msg
+      errorMsg.style.display = 'block'
+      resultEl.style.display = 'none'
+    }
+
+    function clearError() {
+      errorMsg.style.display = 'none'
+      errorMsg.textContent = ''
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      clearError()
+      const secret = secretInput.value.trim()
+      const email  = emailInput.value.trim()
+
+      if (!secret) { showError('Admin secret is required.'); return }
+      if (!email || !email.includes('@')) { showError('A valid email address is required.'); return }
+
+      submitBtn.disabled = true
+      submitBtn.textContent = 'Sending...'
+      resultEl.style.display = 'none'
+
+      try {
+        const res = await fetch('/.netlify/functions/generate-planner-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret, email }),
+        })
+
+        const json = await res.json()
+
+        if (res.status === 401) {
+          showError('Incorrect admin secret.')
+          return
+        }
+        if (res.status === 400) {
+          showError(json.error || 'Bad request, check the email address.')
+          return
+        }
+        if (!res.ok || !json.success) {
+          showError(json.error || 'Server error, code was not generated.')
+          return
+        }
+
+        // Success — persist secret for this session
+        sessionStorage.setItem('admin_secret', secret)
+
+        codeDisplay.textContent = json.code
+        copyBtn.textContent = 'Copy'
+
+        const parts = []
+        if (json.reused) parts.push('<strong>Existing unredeemed code reused</strong>, no new row inserted.')
+        else parts.push('<strong>New code generated</strong> and saved to the database.')
+
+        if (json.email_sent) {
+          parts.push('Email sent successfully.')
+        } else {
+          parts.push('<strong style="color:#FF4D2E">Email failed to send.</strong> Copy the code above and send it manually.')
+        }
+
+        statusLine.className = json.email_sent ? 'status-line' : 'status-line warn'
+        statusLine.innerHTML = parts.join(' ')
+        resultEl.style.display = 'block'
+        emailInput.value = ''
+
+      } catch (err) {
+        showError('Network error, request did not complete.')
+      } finally {
+        submitBtn.disabled = false
+        submitBtn.textContent = 'Generate & Send'
+      }
+    })
+
+    copyBtn.addEventListener('click', () => {
+      const code = codeDisplay.textContent
+      if (!code) return
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = 'Copied'
+        setTimeout(() => { copyBtn.textContent = 'Copy' }, 1800)
+      }).catch(() => {
+        copyBtn.textContent = 'Failed'
+        setTimeout(() => { copyBtn.textContent = 'Copy' }, 1800)
+      })
+    })
+
+    // Allow Enter key in email field to submit
+    emailInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitBtn.click()
+    })
+  </script>
+</body>
+</html>
