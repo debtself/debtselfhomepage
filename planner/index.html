@@ -8,186 +8,291 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --red: #FF4D2E;
-      --dark: #0A0E12;
-      --bg: #F7F5F0;
-      --white: #FFFFFF;
-      --muted: #6B7280;
-      --border: #E8E4DC;
-      --red-soft: rgba(255,77,46,0.08);
+      --cream: #F5F0E8;
+      --paper: #FAF8F3;
+      --ink: #0A0E12;
+      --signal: #FF4D2E;
+      --muted: #6B6560;
+      --hairline: #E3DDD0;
       --sans: 'Familjen Grotesk', sans-serif;
       --serif: 'Instrument Serif', serif;
       --mono: 'JetBrains Mono', monospace;
     }
     html, body {
       min-height: 100vh;
-      background: var(--bg);
+      background: var(--cream);
       font-family: var(--sans);
-      color: var(--dark);
+      color: var(--ink);
       -webkit-font-smoothing: antialiased;
     }
 
     /* TOPBAR */
     .topbar {
-      background: var(--dark);
+      background: var(--ink);
       height: 52px;
       display: flex;
       align-items: center;
       padding: 0 24px;
     }
-    .wm { display: flex; align-items: baseline; gap: 0; }
-    .wm-b { font-size: 17px; font-weight: 700; color: #FAF8F3; margin:0; padding:0; }
-    .wm-s { font-size: 17px; font-weight: 700; color: var(--red); margin:0; padding:0; letter-spacing:-0.5px; }
-    .wm-p { font-family: var(--serif); font-style: italic; font-size: 15px; color: rgba(250,248,243,0.45); margin-left: 7px; font-weight: 400; }
 
-    /* MAIN */
-    .main {
-      min-height: calc(100vh - 52px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-    }
-    .card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 440px;
-    }
-    .eyebrow {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--red);
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .headline {
-      font-family: var(--serif);
-      font-style: italic;
-      font-size: 26px;
-      color: var(--dark);
-      line-height: 1.25;
-      margin-bottom: 8px;
-    }
-    .sub {
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.6;
-      margin-bottom: 28px;
-    }
-    .field-label {
-      font-family: var(--mono);
-      font-size: 9px;
-      color: var(--muted);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
+    /* LAYOUT */
+    .wrap { max-width: 480px; margin: 0 auto; }
+
+    /* HERO */
+    .hero { padding: 44px 24px 30px; text-align: center; }
+    .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+    .h1 { font-size: 26px; font-weight: 700; line-height: 1.25; margin-bottom: 12px; }
+    .h1-sub { font-size: 14.5px; color: var(--muted); line-height: 1.55; max-width: 340px; margin: 0 auto 28px; }
+
+    /* RING */
+    .ring-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; }
+    .ring-caption { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 14px; }
+    .ring-desc { font-size: 13px; color: var(--muted); line-height: 1.55; max-width: 300px; margin: 12px auto 0; }
+
+    /* MECHANICS TOGGLE */
+    .mech-toggle { display: flex; align-items: center; gap: 6px; justify-content: center; margin-top: 16px; font-size: 13px; font-weight: 600; color: var(--signal); cursor: pointer; }
+    .mech-toggle svg { transition: transform 0.2s ease; }
+    .mech-toggle.open svg { transform: rotate(180deg); }
+    .mech-body { display: none; text-align: left; background: var(--paper); border: 1px solid var(--hairline); border-radius: 12px; padding: 16px; margin-top: 14px; }
+    .mech-body.open { display: block; }
+    .mf-row { margin-bottom: 14px; }
+    .mf-row:last-child { margin-bottom: 0; }
+    .mf-top { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .mf-name { font-size: 13.5px; font-weight: 700; }
+    .mf-pts { font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--signal); }
+    .mf-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+    /* COMPARE CARDS */
+    .compare-cards { display: flex; gap: 10px; margin-top: 22px; width: 100%; }
+    .cc-dark, .cc-outline { flex: 1; border-radius: 12px; padding: 16px 14px; text-align: left; }
+    .cc-dark { background: var(--ink); }
+    .cc-outline { border: 1.5px solid var(--signal); }
+    .cc-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: #8a8580; margin-bottom: 8px; }
+    .cc-label-signal { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: var(--signal); margin-bottom: 8px; }
+    .cc-date { font-size: 19px; font-weight: 700; color: var(--paper); margin-bottom: 4px; }
+    .cc-outline .cc-date { color: var(--ink); }
+    .cc-sub-signal { font-size: 12.5px; font-weight: 600; color: var(--signal); margin-bottom: 2px; }
+    .cc-sub-muted { font-size: 11px; color: #9C9488; }
+    .cc-outline .cc-sub-muted { color: var(--muted); }
+    .cc-tagline { text-align: center; font-weight: 700; color: var(--signal); font-size: 14px; margin-top: 14px; }
+
+    /* CTA — TODO: wire to Stripe checkout in a future change */
+    .cta { display: block; background: var(--signal); color: white; text-align: center; padding: 17px; border-radius: 10px; font-weight: 700; font-size: 15.5px; text-decoration: none; margin-bottom: 10px; font-family: var(--sans); }
+    .cta-note { text-align: center; font-size: 11.5px; color: var(--muted); }
+
+    /* CODE ENTRY */
+    .code-toggle { text-align: center; font-size: 12.5px; color: var(--muted); text-decoration: underline; margin-top: 14px; cursor: pointer; }
+    .code-body { display: none; margin-top: 12px; flex-direction: column; gap: 8px; }
+    .code-body.open { display: flex; }
     .code-input {
       width: 100%;
-      background: var(--bg);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 16px;
-      font-size: 18px;
+      padding: 13px 14px;
+      border: 1.5px solid var(--hairline);
+      border-radius: 9px;
       font-family: var(--mono);
-      font-weight: 600;
-      color: var(--dark);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      font-size: 14px;
+      background: var(--paper);
+      color: var(--ink);
       outline: none;
       transition: border-color 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       -webkit-appearance: none;
-      margin-bottom: 12px;
     }
-    .code-input:focus { border-color: var(--red); background: var(--white); }
+    .code-input:focus { border-color: var(--signal); }
     .code-input.error { border-color: #EF4444; }
-    .error-msg {
-      font-size: 13px;
-      color: #EF4444;
-      margin-bottom: 14px;
-      min-height: 18px;
-      display: none;
-    }
+    .error-msg { font-size: 13px; color: #EF4444; display: none; }
     .error-msg.show { display: block; }
-    .btn {
+    .code-submit {
       width: 100%;
-      background: var(--red);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      padding: 16px;
-      font-size: 16px;
+      padding: 13px;
+      border-radius: 9px;
+      border: 1.5px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
       font-weight: 700;
+      font-size: 14px;
       font-family: var(--sans);
       cursor: pointer;
       transition: opacity 0.15s;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn:hover { opacity: 0.9; }
-    .btn:active { opacity: 0.8; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .help {
-      font-size: 12px;
-      color: var(--muted);
-      text-align: center;
-      margin-top: 16px;
-      line-height: 1.6;
-    }
-    .help a { color: var(--red); text-decoration: none; }
+    .code-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    @media (max-width: 480px) {
-      .card { padding: 32px 24px; border-radius: 16px; }
-      .headline { font-size: 22px; }
-    }
+    /* SECTIONS */
+    .section { padding: 34px 28px; border-top: 1px solid var(--hairline); }
+    .section-eyebrow { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; line-height: 1.35; }
+    .section-body { font-size: 14px; color: #3A352F; line-height: 1.6; }
+
+    /* CAROUSEL */
+    .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding: 4px 28px 4px; margin: 0 -28px; -webkit-overflow-scrolling: touch; }
+    .carousel::-webkit-scrollbar { display: none; }
+    .slide { scroll-snap-align: center; flex-shrink: 0; width: 220px; height: 280px; background: var(--paper); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+    .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hairline); }
+    .dot.active { background: var(--signal); }
+
+    /* TESTIMONIAL */
+    .testimonial-text { font-size: 14px; color: var(--muted); line-height: 1.6; font-style: italic; }
+    .ph-tag { display: inline-block; font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; color: var(--signal); margin-bottom: 10px; }
+
+    /* PRICING */
+    .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+    .price-old { font-family: var(--mono); text-decoration: line-through; color: #9C9488; font-size: 15px; }
+    .price-new { font-family: var(--mono); font-weight: 700; font-size: 30px; color: var(--signal); }
+    .price-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+    /* FOOTER */
+    .footer { padding: 24px 28px 40px; border-top: 1px solid var(--hairline); }
+    .disclaimer { font-size: 10.5px; color: #9C9488; line-height: 1.55; }
   </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="wm">
-    <img src="/assets/dark-wordmark.png" alt="debt/self" style="height:22px;display:block;" />
-  </div>
+  <img src="/assets/dark-wordmark.png" alt="debt/self" style="height:22px;display:block;" />
 </div>
 
-<div class="main">
-  <div class="card">
-    <div class="eyebrow">Access required</div>
-    <div class="headline">Enter your access code to open your planner.</div>
-    <div class="sub">Your code is in your Etsy order confirmation email.</div>
+<div class="wrap">
 
-    <div class="field-label">Access code</div>
-    <input
-      class="code-input"
-      id="code-input"
-      type="text"
-      placeholder="DS-XXXX-XXXX"
-      maxlength="12"
-      autocomplete="off"
-      autocorrect="off"
-      autocapitalize="characters"
-      spellcheck="false"
-      oninput="formatCode(this)"
-      onkeydown="if(event.key==='Enter')unlock()"
-    />
-    <div class="error-msg" id="error-msg"></div>
-    <button class="btn" id="unlock-btn" onclick="unlock()">Unlock my planner →</button>
+  <div class="hero">
+    <div class="eyebrow">DEBTSELF PLANNER</div>
+    <div class="h1">Your Debt Freedom Score, calculated from your real numbers.</div>
+    <div class="h1-sub">One score. One real payoff date. Built from your actual debt and budget, not a generic example.</div>
 
-    <div class="help">
-      Can't find your code? <a href="mailto:support@debtself.com">support@debtself.com</a>
+    <!-- Ring — two-value stroke-dasharray renders a true partial arc with a real gap; do not simplify to single-value -->
+    <div class="ring-wrap">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="84" fill="none" stroke="#E8E1D2" stroke-width="13" stroke-linecap="round"
+          stroke-dasharray="513.79 14" transform="rotate(-90 100 100)"/>
+        <circle cx="100" cy="100" r="84" fill="none" stroke="#FF4D2E" stroke-width="13" stroke-linecap="round"
+          stroke-dasharray="333.96 193.83" transform="rotate(-90 100 100)"/>
+        <text x="100" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="44" font-weight="700" fill="#0A0E12">65</text>
+        <text x="100" y="122" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#6B6560" letter-spacing="0.5">Manageable</text>
+      </svg>
+      <div class="ring-caption">YOUR DEBT FREEDOM SCORE</div>
+      <div class="ring-desc">Your interest rates are costing you significantly each month.<br>High credit utilization is affecting your credit profile.</div>
+
+      <div class="mech-toggle" onclick="toggleMech()" id="mechToggle">
+        <span>How is this calculated</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF4D2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+
+      <div class="mech-body" id="mechBody">
+        <div class="mf-row">
+          <div class="mf-top"><span class="mf-name">Payoff timeline</span><span class="mf-pts">24 / 30 pts</span></div>
+          <div class="mf-desc">A faster realistic path to debt free raises your score.</div>
+        </div>
+        <div class="mf-row">
+          <div class="mf-top"><span class="mf-name">Credit utilization</span><span class="mf-pts">10 / 20 pts</span></div>
+          <div class="mf-desc">Lower balances relative to your credit limits raise your score.</div>
+        </div>
+        <div class="mf-row">
+          <div class="mf-top"><span class="mf-name">Monthly margin</span><span class="mf-pts">28 / 30 pts</span></div>
+          <div class="mf-desc">More cash available each month above your minimum payments raises your score.</div>
+        </div>
+        <div class="mf-row">
+          <div class="mf-top"><span class="mf-name">Weighted average APR</span><span class="mf-pts">3 / 20 pts</span></div>
+          <div class="mf-desc">Lower interest rates across your accounts raise your score.</div>
+        </div>
+      </div>
+
+      <div class="compare-cards">
+        <div class="cc-dark">
+          <div class="cc-label">IF NOTHING CHANGES</div>
+          <div class="cc-date">Apr 2048</div>
+          <div class="cc-sub-signal">$130,838 in interest</div>
+          <div class="cc-sub-muted">Minimum payments only</div>
+        </div>
+        <div class="cc-outline">
+          <div class="cc-label-signal">YOUR PLAN</div>
+          <div class="cc-date">Aug 2028</div>
+          <div class="cc-sub-signal">Save $115,278</div>
+          <div class="cc-sub-muted">Avalanche method</div>
+        </div>
+      </div>
+      <div class="cc-tagline">19 yr 8 mo sooner</div>
+    </div>
+
+    <!-- TODO: wire to Stripe checkout in a future change -->
+    <a href="#" class="cta">Get your plan — $31.50 →</a>
+    <div class="cta-note">One-time purchase. Instant access.</div>
+
+    <div class="code-toggle" onclick="toggleCode()">Already have a code?</div>
+    <div class="code-body" id="codeBody">
+      <input
+        type="text"
+        class="code-input"
+        id="code-input"
+        placeholder="DS-XXXX-XXXX"
+        maxlength="12"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        oninput="formatCode(this)"
+        onkeydown="if(event.key==='Enter')unlock()"
+      />
+      <div class="error-msg" id="error-msg"></div>
+      <button class="code-submit" id="unlock-btn" onclick="unlock()">Unlock my planner</button>
     </div>
   </div>
+
+  <div class="section">
+    <div class="section-eyebrow">WHAT IT DOES</div>
+    <div class="section-title">Built from your real numbers, not examples</div>
+    <div class="section-body">Enter your actual balances, rates, and monthly budget. The planner compares your payoff paths against each other and gives you a score and a real date, the same way the preview above works, just calculated from your own numbers instead of an example.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">SEE IT BEFORE YOU BUY</div>
+    <div class="section-title">A look inside the planner</div>
+    <div class="carousel">
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/buildplan1.png" alt="Your complete debt plan overview" style="width:100%;height:100%;object-fit:cover;border-radius:14px;"></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/enterdebts2.png" alt="Enter your debts" style="width:100%;height:100%;object-fit:cover;border-radius:14px;"></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/nothingchanges%20.png" alt="If nothing changes, the real cost in interest" style="width:100%;height:100%;object-fit:cover;border-radius:14px;"></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/breakdown4.png" alt="Your budget breakdown" style="width:100%;height:100%;object-fit:cover;border-radius:14px;"></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/monthplan5.png" alt="Your month-by-month plan" style="width:100%;height:100%;object-fit:cover;border-radius:14px;"></div>
+    </div>
+    <div class="carousel-dots">
+      <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">FROM SOMEONE WHO USED IT</div>
+    <div class="ph-tag">PLACEHOLDER — NOT REAL COPY, PENDING APPROVAL</div>
+    <div class="testimonial-text">Reserved for a real testimonial once the wording is explicitly confirmed by the person who said it. Likely shape: a payoff path recommendation, an option ruled out, a real debt-free date.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-body">Built by someone who has spent over 10 years in the financial industry, watching people get steered toward the wrong solution simply because they never knew what their actual options were.</div>
+  </div>
+
+  <div class="section">
+    <div class="price-row">
+      <span class="price-old">$45</span>
+      <span class="price-new">$31.50</span>
+    </div>
+    <div class="price-sub">30% off, launch price</div>
+    <!-- TODO: wire to Stripe checkout in a future change -->
+    <a href="#" class="cta">Get your plan — $31.50 →</a>
+    <div class="cta-note">One-time purchase. Instant access.</div>
+  </div>
+
+  <div class="footer">
+    <div class="disclaimer">Results vary. debtself is not a law firm and does not provide legal advice.</div>
+  </div>
+
 </div>
 
 <script>
   const SESSION_KEY = 'planner_session'
   const TOOL_URL = '/planner/tool/'
 
-  // On load — check if already unlocked
+  // On load — redirect if already unlocked
   ;(function() {
     try {
       const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
@@ -197,16 +302,22 @@
     } catch(e) {}
   })()
 
+  function toggleCode() {
+    document.getElementById('codeBody').classList.toggle('open')
+  }
+
+  function toggleMech() {
+    document.getElementById('mechToggle').classList.toggle('open')
+    document.getElementById('mechBody').classList.toggle('open')
+  }
+
   function formatCode(input) {
-    // Strip everything except alphanumeric, uppercase
     let raw = input.value.replace(/[^A-Z0-9]/gi, '').toUpperCase()
-    // Insert dashes at positions 2 and 6 (DS-XXXX-XXXX)
     let formatted = ''
     if (raw.length > 0) formatted += raw.slice(0, 2)
     if (raw.length > 2) formatted += '-' + raw.slice(2, 6)
     if (raw.length > 6) formatted += '-' + raw.slice(6, 10)
     input.value = formatted
-    // Clear error on edit
     showError('')
     input.classList.remove('error')
   }
@@ -234,7 +345,7 @@
     }
 
     if (!/^DS-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) {
-      showError('That doesn\'t look right. Codes are formatted DS-XXXX-XXXX.')
+      showError("That doesn't look right. Codes are formatted DS-XXXX-XXXX.")
       input.classList.add('error')
       return
     }
@@ -253,7 +364,6 @@
       const data = await res.json()
 
       if (data.valid && data.session_token) {
-        // Store session
         localStorage.setItem(SESSION_KEY, JSON.stringify({
           token: data.session_token,
           unlockedAt: new Date().toISOString(),
@@ -262,13 +372,13 @@
         window.location.replace(TOOL_URL)
       } else {
         showError(data.error || 'Code not recognized. Check your Etsy order confirmation.')
-        btn.textContent = 'Unlock my planner →'
+        btn.textContent = 'Unlock my planner'
         btn.disabled = false
         input.focus()
       }
     } catch(err) {
       showError('Something went wrong. Please try again.')
-      btn.textContent = 'Unlock my planner →'
+      btn.textContent = 'Unlock my planner'
       btn.disabled = false
     }
   }
