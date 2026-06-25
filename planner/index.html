@@ -129,7 +129,9 @@
     /* CAROUSEL */
     .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding: 0; margin: 0; -webkit-overflow-scrolling: touch; }
     .carousel::-webkit-scrollbar { display: none; }
-    .slide { scroll-snap-align: center; flex-shrink: 0; width: 100%; aspect-ratio: 3/4; height: auto; background: var(--paper); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; cursor: zoom-in; }
+    .slide { scroll-snap-align: center; flex-shrink: 0; width: 100%; background: var(--paper); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; cursor: zoom-in; display: flex; flex-direction: column; }
+    .slide img { width: 100%; aspect-ratio: 3/4; object-fit: contain; border-radius: 14px 14px 0 0; display: block; }
+    .slide-caption { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 10px 12px; height: 52px; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
 
     /* LIGHTBOX */
     .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1000; align-items: center; justify-content: center; }
@@ -261,11 +263,11 @@
     <div class="section-eyebrow">SEE IT BEFORE YOU BUY</div>
     <div class="section-title">A look inside the planner</div>
     <div class="carousel">
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/buildplan1.png" alt="Your complete debt plan overview" style="width:100%;height:100%;object-fit:contain;border-radius:14px;"></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/enterdebts2.png" alt="Enter your debts" style="width:100%;height:100%;object-fit:contain;border-radius:14px;"></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/nothingchanges%20.png" alt="If nothing changes, the real cost in interest" style="width:100%;height:100%;object-fit:contain;border-radius:14px;"></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/breakdown4.png" alt="Your budget breakdown" style="width:100%;height:100%;object-fit:contain;border-radius:14px;"></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/monthplan5.png" alt="Your month-by-month plan" style="width:100%;height:100%;object-fit:contain;border-radius:14px;"></div>
+      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/buildplan1.png" alt="Your complete debt plan overview"><div class="slide-caption">Every path out, ranked by what it actually costs</div></div>
+      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/enterdebts2.png" alt="Enter your debts"><div class="slide-caption">Your real accounts, not someone else's example</div></div>
+      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/nothingchanges%20.png" alt="If nothing changes, the real cost in interest"><div class="slide-caption">What waiting actually costs you</div></div>
+      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/breakdown4.png" alt="Your budget breakdown"><div class="slide-caption">Exactly how much room you have to work with</div></div>
+      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/monthplan5.png" alt="Your month-by-month plan"><div class="slide-caption">A plan you follow month by month, not just see once</div></div>
     </div>
     <div class="carousel-dots">
       <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -279,6 +281,8 @@
   </div>
 
   <div class="section">
+    <div class="section-eyebrow">WHO BUILT THIS</div>
+    <div class="section-title">Over a decade watching people choose the wrong solution.</div>
     <div class="section-body">Built by someone who has spent over 10 years in the financial industry, watching people get steered toward the wrong solution simply because they never knew what their actual options were.</div>
   </div>
 
