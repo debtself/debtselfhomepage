@@ -83,8 +83,7 @@ exports.handler = async (event) => {
     }
   }
 
-  // Already redeemed — return existing session token (original buyer on new device)
-  // and increment redemption_count so we can monitor sharing
+  // Already redeemed — block access, increment redemption_count for observability
   await supabase
     .from('planner_codes')
     .update({ redemption_count: (data.redemption_count || 1) + 1 })
@@ -93,6 +92,6 @@ exports.handler = async (event) => {
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({ valid: true, session_token: data.session_token })
+    body: JSON.stringify({ valid: false, error: 'This code has already been used. If you\'re the original buyer and lost access, contact support@debtself.com.' })
   }
 }
