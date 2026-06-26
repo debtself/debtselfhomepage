@@ -76,6 +76,39 @@ exports.handler = async (event) => {
       })
       .eq('code', code)
 
+    try {
+      const buyerEmail = data.buyer_email
+      if (buyerEmail) {
+        const { data: priorCodes } = await supabase
+          .from('planner_codes')
+          .select('session_token')
+          .eq('buyer_email', buyerEmail)
+          .neq('code', code)
+          .not('session_token', 'is', null)
+
+        if (priorCodes && priorCodes.length > 0) {
+          const priorTokens = priorCodes.map(r => r.session_token)
+          const { data: priorProgress } = await supabase
+            .from('planner_progress')
+            .select('session_token, updated_at')
+            .in('session_token', priorTokens)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          if (priorProgress) {
+            await supabase
+              .from('planner_progress')
+              .update({ session_token })
+              .eq('session_token', priorProgress.session_token)
+            console.log('Progress migration: re-pointed', priorProgress.session_token, '->', session_token, 'for', buyerEmail)
+          }
+        }
+      }
+    } catch (migrationErr) {
+      console.error('Progress migration error (non-fatal):', migrationErr.message)
+    }
+
     return {
       statusCode: 200,
       headers,

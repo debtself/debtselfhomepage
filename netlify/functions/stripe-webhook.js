@@ -94,6 +94,36 @@ exports.handler = async (event) => {
     }
 
     try {
+      const { data: priorCodes } = await supabase
+        .from('planner_codes')
+        .select('session_token')
+        .eq('buyer_email', email)
+        .neq('session_token', sessionToken)
+        .not('session_token', 'is', null)
+
+      if (priorCodes && priorCodes.length > 0) {
+        const priorTokens = priorCodes.map(r => r.session_token)
+        const { data: priorProgress } = await supabase
+          .from('planner_progress')
+          .select('session_token, updated_at')
+          .in('session_token', priorTokens)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (priorProgress) {
+          await supabase
+            .from('planner_progress')
+            .update({ session_token: sessionToken })
+            .eq('session_token', priorProgress.session_token)
+          console.log('Progress migration: re-pointed', priorProgress.session_token, '->', sessionToken, 'for', email)
+        }
+      }
+    } catch (migrationErr) {
+      console.error('Progress migration error (non-fatal):', migrationErr.message)
+    }
+
+    try {
       const emailPayload = buildEmail(email, code)
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
