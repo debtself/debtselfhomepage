@@ -168,6 +168,12 @@ exports.handler = async (event) => {
     .maybeSingle()
 
   if (upsertError) {
+    console.error('planner_progress upsert failed:', JSON.stringify({
+      code: upsertError.code,
+      message: upsertError.message,
+      details: upsertError.details,
+      hint: upsertError.hint,
+    }))
     return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Could not save progress' }) }
   }
 
