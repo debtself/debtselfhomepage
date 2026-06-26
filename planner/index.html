@@ -128,8 +128,9 @@
     /* CAROUSEL */
     .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding: 0; margin: 0; -webkit-overflow-scrolling: touch; }
     .carousel::-webkit-scrollbar { display: none; }
-    .slide { scroll-snap-align: center; flex-shrink: 0; width: 100%; background: var(--paper); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; cursor: zoom-in; display: flex; flex-direction: column; }
+    .slide { scroll-snap-align: center; flex-shrink: 0; width: 100%; background: var(--paper); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
     .slide img { width: 100%; aspect-ratio: 3/4; object-fit: contain; border-radius: 14px 14px 0 0; display: block; }
+    .slide-enlarge { position: absolute; bottom: 58px; right: 10px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.55); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; -webkit-tap-highlight-color: transparent; }
     .slide-caption { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 10px 12px; height: 52px; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
 
     /* LIGHTBOX */
@@ -262,11 +263,11 @@
     <div class="section-eyebrow">SEE IT BEFORE YOU BUY</div>
     <div class="section-title">A look inside the planner</div>
     <div class="carousel">
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/buildplan1.png" alt="Your complete debt plan overview"><div class="slide-caption">Every path out, ranked by what it actually costs</div></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/enterdebts2.png" alt="Enter your debts"><div class="slide-caption">Your real accounts, not someone else's example</div></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/nothingchanges%20.png" alt="If nothing changes, the real cost in interest"><div class="slide-caption">What waiting actually costs you</div></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/breakdown4.png" alt="Your budget breakdown"><div class="slide-caption">Exactly how much room you have to work with</div></div>
-      <div class="slide" onclick="openLightbox(this)"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/monthplan5.png" alt="Your month-by-month plan"><div class="slide-caption">A plan you follow month by month, not just see once</div></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/buildplan1.png" alt="Your complete debt plan overview"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">Every path out, ranked by what it actually costs</div></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/enterdebts2.png" alt="Enter your debts"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">Your real accounts, not someone else's example</div></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/nothingchanges%20.png" alt="If nothing changes, the real cost in interest"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">What waiting actually costs you</div></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/breakdown4.png" alt="Your budget breakdown"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">Exactly how much room you have to work with</div></div>
+      <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/monthplan5.png" alt="Your month-by-month plan"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">A plan you follow month by month, not just see once</div></div>
     </div>
     <div class="carousel-dots">
       <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -316,8 +317,8 @@
     } catch(e) {}
   })()
 
-  function openLightbox(slide) {
-    const img = slide.querySelector('img')
+  function openLightbox(btn) {
+    const img = btn.closest('.slide').querySelector('img')
     document.getElementById('lightbox-img').src = img.src
     document.getElementById('lightbox-img').alt = img.alt
     document.getElementById('lightbox').classList.add('open')
