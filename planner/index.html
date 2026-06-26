@@ -270,6 +270,21 @@
       <div class="error-msg" id="error-msg"></div>
       <button class="code-submit" id="unlock-btn" onclick="unlock()">Unlock my planner</button>
     </div>
+
+    <div class="code-toggle" style="margin-top:8px;" onclick="toggleRecovery()">Lost access?</div>
+    <div class="code-body" id="recoveryBody">
+      <input
+        type="email"
+        class="code-input"
+        id="recovery-email"
+        placeholder="your@email.com"
+        autocomplete="email"
+        style="font-family:var(--sans);text-transform:none;letter-spacing:normal;"
+        onkeydown="if(event.key==='Enter')sendRecovery()"
+      />
+      <div class="error-msg" id="recovery-msg"></div>
+      <button class="code-submit" id="recovery-btn" onclick="sendRecovery()">Send recovery link</button>
+    </div>
   </div>
 
   <div class="section">
@@ -345,6 +360,8 @@
     const params = new URLSearchParams(window.location.search)
     if (params.get('payment') === 'success' && params.get('session_id')) {
       pollForAccess(params.get('session_id'))
+    } else if (params.get('recovery_code')) {
+      handleRecoveryCode(params.get('recovery_code'))
     }
   })()
 
@@ -472,6 +489,83 @@
     } else {
       el.classList.remove('show')
     }
+  }
+
+  async function handleRecoveryCode(code) {
+    const banner = document.getElementById('purchase-banner')
+    banner.style.display = 'block'
+    banner.textContent = 'Logging you in...'
+
+    try {
+      const res = await fetch('/.netlify/functions/validate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
+
+      if (data.valid && data.session_token) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          token: data.session_token,
+          unlockedAt: new Date().toISOString(),
+          code,
+        }))
+        window.location.replace(TOOL_URL)
+      } else {
+        banner.style.display = 'none'
+        document.getElementById('codeBody').classList.add('open')
+        document.getElementById('code-input').value = code
+        showError(data.error || 'This recovery link has already been used. Request a new one below.')
+      }
+    } catch(err) {
+      banner.style.display = 'none'
+      showError('Something went wrong. Please try again.')
+    }
+  }
+
+  function toggleRecovery() {
+    posthog.capture('cta_clicked', { cta_label: 'planner_recovery_toggle', destination: null })
+    document.getElementById('recoveryBody').classList.toggle('open')
+  }
+
+  async function sendRecovery() {
+    posthog.capture('cta_clicked', { cta_label: 'planner_recovery_submit', destination: null })
+    const input = document.getElementById('recovery-email')
+    const btn = document.getElementById('recovery-btn')
+    const msgEl = document.getElementById('recovery-msg')
+    const email = input.value.trim()
+
+    if (!email) {
+      msgEl.textContent = 'Please enter your email address.'
+      msgEl.style.color = '#EF4444'
+      msgEl.classList.add('show')
+      input.classList.add('error')
+      return
+    }
+
+    btn.textContent = 'Sending...'
+    btn.disabled = true
+    msgEl.classList.remove('show')
+    input.classList.remove('error')
+
+    try {
+      const res = await fetch('/.netlify/functions/request-planner-recovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      msgEl.textContent = data.message || 'If that email has a planner purchase, check your inbox for a recovery link.'
+      msgEl.style.color = '#6B6560'
+      msgEl.classList.add('show')
+    } catch(err) {
+      msgEl.textContent = 'Something went wrong. Please try again.'
+      msgEl.style.color = '#EF4444'
+      msgEl.classList.add('show')
+    }
+
+    btn.textContent = 'Send recovery link'
+    btn.disabled = false
   }
 
   async function unlock() {
