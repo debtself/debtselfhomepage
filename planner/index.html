@@ -129,11 +129,10 @@
     .carousel-wrap { position: relative; }
     .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding: 0; margin: 0; -webkit-overflow-scrolling: touch; }
     .carousel::-webkit-scrollbar { display: none; }
-    .carousel-arrow { display: none; }
+    .carousel-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+    .carousel-arrow { display: none; background: none; border: none; cursor: pointer; padding: 2px; color: var(--muted); line-height: 0; -webkit-tap-highlight-color: transparent; }
     @media (min-width: 601px) {
-      .carousel-arrow { display: flex; position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; background: rgba(10,14,18,0.55); border: none; cursor: pointer; align-items: center; justify-content: center; padding: 0; z-index: 10; -webkit-tap-highlight-color: transparent; }
-      .carousel-arrow-left { left: -18px; }
-      .carousel-arrow-right { right: -18px; }
+      .carousel-arrow { display: flex; }
     }
     .slide { scroll-snap-align: center; flex-shrink: 0; width: 100%; background: var(--paper); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
     .slide img { width: 100%; aspect-ratio: 3/4; object-fit: contain; border-radius: 14px 14px 0 0; display: block; }
@@ -145,7 +144,7 @@
     .lightbox.open { display: flex; }
     .lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: 10px; }
     .lightbox-close { position: absolute; top: 18px; right: 20px; font-size: 28px; color: white; cursor: pointer; line-height: 1; background: none; border: none; padding: 4px 8px; }
-    .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
+    .carousel-dots { display: flex; gap: 6px; }
     .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hairline); }
     .dot.active { background: var(--signal); }
 
@@ -272,8 +271,6 @@
     <div class="section-eyebrow">SEE IT BEFORE YOU BUY</div>
     <div class="section-title">A look inside the planner</div>
     <div class="carousel-wrap">
-      <button class="carousel-arrow carousel-arrow-left" onclick="scrollCarousel(-1)" aria-label="Previous slide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <button class="carousel-arrow carousel-arrow-right" onclick="scrollCarousel(1)" aria-label="Next slide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
       <div class="carousel" id="carousel">
         <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/buildplan1.png" alt="Your complete debt plan overview"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">Every path out, ranked by what it actually costs</div></div>
         <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/enterdebts2.png" alt="Enter your debts"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">Your real accounts, not someone else's example</div></div>
@@ -282,8 +279,12 @@
         <div class="slide"><img src="https://oxkbeogilyaljvlbthrl.supabase.co/storage/v1/object/public/homepage/monthplan5.png" alt="Your month-by-month plan"><button class="slide-enlarge" onclick="openLightbox(this);event.stopPropagation()" aria-label="Enlarge image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button><div class="slide-caption">A plan you follow month by month, not just see once</div></div>
       </div>
     </div>
-    <div class="carousel-dots">
-      <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="carousel-nav">
+      <button class="carousel-arrow" onclick="scrollCarousel(-1)" aria-label="Previous slide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="carousel-dots" style="display:flex;gap:6px;margin:0;">
+        <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+      <button class="carousel-arrow" onclick="scrollCarousel(1)" aria-label="Next slide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
     </div>
   </div>
 
