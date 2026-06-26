@@ -23,6 +23,7 @@ exports.handler = async (event) => {
       mode: 'payment',
       line_items: [{ price: 'price_1TmLH0Fk2PrrZSW3SYDYC0rp', quantity: 1 }],
       customer_creation: 'always',
+      allow_promotion_codes: true,
       success_url: 'https://debtself.com/planner?payment=success&session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://debtself.com/planner',
     })
