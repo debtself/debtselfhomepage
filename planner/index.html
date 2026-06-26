@@ -177,6 +177,8 @@
 
 <div class="wrap">
 
+  <div id="purchase-banner" style="display:none;text-align:center;padding:20px 24px;font-size:14px;color:var(--muted);line-height:1.6;"></div>
+
   <div class="hero">
     <div class="eyebrow">DEBTSELF PLANNER</div>
     <div class="h1">Your Debt Freedom Score, calculated from your real numbers.</div>
@@ -318,15 +320,54 @@
   const SESSION_KEY = 'planner_session'
   const TOOL_URL = '/planner/tool/'
 
-  // On load — redirect if already unlocked
+  // On load — redirect if already unlocked, or poll after Stripe redirect
   ;(function() {
     try {
       const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
       if (session && session.token) {
         window.location.replace(TOOL_URL)
+        return
       }
     } catch(e) {}
+
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('payment') === 'success' && params.get('session_id')) {
+      pollForAccess(params.get('session_id'))
+    }
   })()
+
+  async function pollForAccess(sessionId) {
+    const banner = document.getElementById('purchase-banner')
+    banner.style.display = 'block'
+    banner.textContent = 'Confirming your purchase...'
+
+    const MAX_ATTEMPTS = 10
+    const INTERVAL_MS = 1500
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      await new Promise(r => setTimeout(r, INTERVAL_MS))
+
+      try {
+        const res = await fetch(
+          '/.netlify/functions/check-planner-purchase?session_id=' + encodeURIComponent(sessionId)
+        )
+        const data = await res.json()
+
+        if (data.ready && data.session_token) {
+          localStorage.setItem(SESSION_KEY, JSON.stringify({
+            token: data.session_token,
+            unlockedAt: new Date().toISOString(),
+          }))
+          window.location.replace(TOOL_URL)
+          return
+        }
+      } catch(e) {
+        // network error on one poll — keep trying
+      }
+    }
+
+    banner.textContent = 'Your purchase is confirmed. We\'re finishing setup, this can take a moment. If this doesn\'t update shortly, check your email for your access code or contact support@debtself.com.'
+  }
 
   function scrollCarousel(dir) {
     const carousel = document.getElementById('carousel')

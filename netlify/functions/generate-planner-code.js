@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js')
+const { generateCode, buildEmail } = require('./utils/planner-email')
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -6,62 +7,6 @@ const supabase = createClient(
 )
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-
-// Excludes 0, O, 1, I, L to avoid manual-entry ambiguity
-const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-
-function generateSegment(len) {
-  let s = ''
-  for (let i = 0; i < len; i++) {
-    s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]
-  }
-  return s
-}
-
-function generateCode() {
-  return `DS-${generateSegment(4)}-${generateSegment(4)}`
-}
-
-function buildEmail(email, code) {
-  return {
-    from: 'debtself <support@debtself.com>',
-    to: email,
-    subject: 'Your debtself planner is ready',
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>
-      <body style="margin:0;padding:0;background:#F7F5F0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        <div style="max-width:520px;margin:0 auto;padding:32px 16px;">
-
-          <div style="background:#FFFFFF;border-radius:16px;padding:32px;border:1px solid #E8E4DC;">
-            <div style="margin:-32px -32px 24px -32px;">
-              <img src="https://debtself.com/assets/dark-header-lockup.png" alt="debt/self" width="520" height="68" style="width:100%;height:auto;display:block;border-radius:10px 10px 0 0;" />
-            </div>
-
-            <div style="font-size:11px;font-weight:700;color:#FF4D2E;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:12px;">Your access code</div>
-            <div style="font-size:22px;font-weight:700;color:#0A0E12;margin-bottom:8px;">Your debtself planner is ready.</div>
-            <div style="font-size:14px;color:#6B7280;line-height:1.6;margin-bottom:24px;">Use the code below to get started. Go to <a href="https://debtself.com/planner" style="color:#FF4D2E;text-decoration:none;">debtself.com/planner</a> and enter it when prompted.</div>
-
-            <div style="background:#F7F5F0;border-radius:12px;padding:24px;margin:0 0 24px 0;text-align:center;">
-              <div style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Your code</div>
-              <div style="font-size:28px;font-weight:700;color:#0A0E12;letter-spacing:0.1em;font-family:'Courier New',Courier,monospace;">${code}</div>
-            </div>
-
-            <div style="font-size:12px;color:#6B7280;margin-top:24px;padding-top:16px;border-top:1px solid #E8E4DC;">
-              Questions? Reply to this email or reach us at support@debtself.com
-            </div>
-          </div>
-
-          <div style="text-align:center;margin-top:24px;font-size:11px;color:#6B7280;">
-            Results vary. debtself is not a law firm and does not provide legal advice.
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-  }
-}
 
 exports.handler = async (event) => {
   const headers = {
