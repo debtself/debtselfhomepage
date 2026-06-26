@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>debtself planner</title>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+" (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureFlagEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+
+    posthog.init('phc_sfRoGkHfkPRoqSvbKYSeFLzSuSAUPVjHiY9nXyHaQg4F', {
+      person_profiles:  'always',
+      api_host:         'https://us.i.posthog.com',
+      capture_pageview: true,
+      capture_pageleave: true,
+      autocapture:      false,
+    });
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -237,7 +248,7 @@
       <div class="cc-tagline">19 yr 8 mo sooner</div>
     </div>
 
-    <button class="cta" onclick="startCheckout(this)">Get your plan — $31.50 →</button>
+    <button class="cta" onclick="startCheckout(this)" data-cta-label="planner_hero_cta">Get your plan — $31.50 →</button>
     <div class="cta-note">One-time purchase. Instant access.</div>
     <div class="cta-error" id="cta-error-hero" style="display:none;font-size:12px;color:#EF4444;text-align:center;margin-top:8px;line-height:1.5;"></div>
 
@@ -306,7 +317,7 @@
       <span class="price-new">$31.50</span>
     </div>
     <div class="price-sub">30% off, launch price</div>
-    <button class="cta" onclick="startCheckout(this)">Get your plan — $31.50 →</button>
+    <button class="cta" onclick="startCheckout(this)" data-cta-label="planner_pricing_cta">Get your plan — $31.50 →</button>
     <div class="cta-note">One-time purchase. Instant access.</div>
     <div class="cta-error" id="cta-error-pricing" style="display:none;font-size:12px;color:#EF4444;text-align:center;margin-top:8px;line-height:1.5;"></div>
   </div>
@@ -396,6 +407,11 @@
   })
 
   async function startCheckout(btn) {
+    posthog.capture('cta_clicked', {
+      cta_label: btn.dataset.ctaLabel,
+      destination: 'stripe_checkout',
+    })
+
     const originalText = btn.textContent
     btn.textContent = 'Redirecting...'
     btn.disabled = true
@@ -410,6 +426,7 @@
       const data = await res.json()
 
       if (data.url) {
+        posthog.capture('planner_checkout_initiated')
         window.location.href = data.url
       } else {
         throw new Error('No URL returned')
@@ -426,6 +443,7 @@
   }
 
   function toggleCode() {
+    posthog.capture('cta_clicked', { cta_label: 'planner_code_toggle', destination: null })
     document.getElementById('codeBody').classList.toggle('open')
   }
 
@@ -457,6 +475,7 @@
   }
 
   async function unlock() {
+    posthog.capture('cta_clicked', { cta_label: 'planner_code_submit', destination: null })
     const input = document.getElementById('code-input')
     const btn = document.getElementById('unlock-btn')
     const code = input.value.trim().toUpperCase()
