@@ -8,7 +8,7 @@ const supabase = createClient(
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': 'https://debtself.com',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Content-Type': 'application/json',
   }
@@ -17,7 +17,7 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' }
   }
 
-  if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
+  if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST' && event.httpMethod !== 'DELETE') {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) }
   }
 
@@ -80,6 +80,35 @@ exports.handler = async (event) => {
         },
       }),
     }
+  }
+
+  if (event.httpMethod === 'DELETE') {
+    const session_token = (event.queryStringParameters || {}).session_token
+    if (!session_token) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'session_token is required' }) }
+    }
+
+    const valid = await resolveSession(session_token)
+    if (!valid) {
+      return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: 'Invalid session' }) }
+    }
+
+    const { error: deleteError } = await supabase
+      .from('planner_progress')
+      .delete()
+      .eq('session_token', session_token)
+
+    if (deleteError) {
+      console.error('planner_progress delete failed:', JSON.stringify({
+        code: deleteError.code,
+        message: deleteError.message,
+        details: deleteError.details,
+        hint: deleteError.hint,
+      }))
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Could not reset progress' }) }
+    }
+
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true }) }
   }
 
   // POST
