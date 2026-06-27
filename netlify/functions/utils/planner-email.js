@@ -39,6 +39,8 @@ function buildEmail(email, code) {
               <div style="font-size:28px;font-weight:700;color:#0A0E12;letter-spacing:0.1em;font-family:'Courier New',Courier,monospace;">${code}</div>
             </div>
 
+            <div style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:24px;">Your progress saves automatically as you go, so you can pick up right where you left off on any device. Just return to <a href="https://debtself.com/planner" style="color:#FF4D2E;text-decoration:none;">debtself.com/planner</a> and click "Used this on another device?" with this same email.</div>
+
             <div style="font-size:12px;color:#6B7280;margin-top:24px;padding-top:16px;border-top:1px solid #E8E4DC;">
               Questions? Reply to this email or reach us at support@debtself.com
             </div>
