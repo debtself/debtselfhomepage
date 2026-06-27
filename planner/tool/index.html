@@ -2510,6 +2510,19 @@ function savePlannerProgressDebounced() {
   _progressDebounce = setTimeout(() => savePlannerProgressNow(), 400)
 }
 
+function deleteServerProgress() {
+  try {
+    const session = JSON.parse(localStorage.getItem('planner_session') || 'null')
+    const token = session && session.token
+    if (!token) return
+    fetch('/.netlify/functions/planner-progress?session_token=' + encodeURIComponent(token), {
+      method: 'DELETE',
+    }).catch(e => console.error('Progress delete failed:', e))
+  } catch(e) {
+    console.error('Progress delete error:', e)
+  }
+}
+
 async function saveEarlyProgress() {
   try {
     const session = JSON.parse(localStorage.getItem('planner_session') || 'null')
@@ -2806,7 +2819,10 @@ window.addEventListener('load', async () => {
 // ═══════════════════════════════════════
 function restart() {
   try { localStorage.removeItem('debtself_planner') } catch(e) {}
-  S.debts=[];S.obligations=[];S.creditScore='';S.paycheckFreq='';S.paycheckAmt=0;S.monthlyIncome=0
+  clearTimeout(_progressDebounce)
+  deleteServerProgress()
+  liveState = null; _selectedMethod = null; _compareData = []
+  S.debts=[];S.obligations=[];S.creditScore='';S.paycheckFreq='';S.paycheckAmt=0;S.monthlyIncome=0;S.grossPaycheckAmt=0;S.grossMonthlyIncome=0
   debtCtr=0;obligCtr=0;calcD={}
   document.getElementById('debt-cards').innerHTML=''
   document.getElementById('oblig-list').innerHTML=''
@@ -2820,6 +2836,10 @@ function restart() {
   document.getElementById('budget-ack').textContent=''
   document.getElementById('btn-budget-next').disabled=true
   ;['b-housing','b-utilities','b-phone','b-insurance','b-transport','b-groceries','b-dining','b-other'].forEach(id=>{document.getElementById(id).value=''})
+  const grossEl = document.getElementById('gross-paycheck-amt')
+  if (grossEl) grossEl.value = ''
+  const grossWarning = document.getElementById('gross-warning')
+  if (grossWarning) grossWarning.style.display = 'none'
   go('s-intro',0)
 }
 </script>
