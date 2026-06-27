@@ -119,7 +119,7 @@ exports.handler = async (event) => {
   // Fetch existing row before writing
   const { data: existing } = await supabase
     .from('planner_progress')
-    .select('method_locked, locked_method, months_completed, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid')
+    .select('method_locked, locked_method, months_completed, debts, budget, credit_score, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid')
     .eq('session_token', session_token)
     .maybeSingle()
 
@@ -144,15 +144,26 @@ exports.handler = async (event) => {
     ? existing.baseline_total_debt
     : (baseline_total_debt ?? null)
 
+  // Never overwrite real data with empty defaults from an early-step save.
+  // An incoming budget of all zeros or an empty debts array indicates an early
+  // save that hasn't reached that step yet — keep what's already stored.
+  const incomingBudgetIsEmpty = !normalizedBudget.income && !normalizedBudget.expenses && !normalizedBudget.obligations
+  const savedBudget = (incomingBudgetIsEmpty && existing?.budget) ? existing.budget : normalizedBudget
+
+  const savedCreditScore = (normalizedCreditScore === '' && existing?.credit_score) ? existing.credit_score : normalizedCreditScore
+
+  const incomingDebtsIsEmpty = !Array.isArray(debts) || debts.length === 0
+  const savedDebts = (incomingDebtsIsEmpty && Array.isArray(existing?.debts) && existing.debts.length > 0) ? existing.debts : debts
+
   const upsertPayload = {
     session_token,
-    debts,
+    debts: savedDebts,
     extra: extra ?? 0,
     method_locked: savedMethodLocked,
     locked_method: savedLockedMethod,
     months_completed: savedMonthsCompleted,
-    budget: normalizedBudget,
-    credit_score: normalizedCreditScore,
+    budget: savedBudget,
+    credit_score: savedCreditScore,
     baseline_interest_saved: savedBaselineInterestSaved,
     baseline_min_months: savedBaselineMinMonths,
     baseline_total_debt: savedBaselineTotalDebt,

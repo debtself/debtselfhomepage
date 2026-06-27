@@ -573,7 +573,7 @@
     <div class="debt-cards" id="debt-cards"></div>
     <button class="btn-add" onclick="addDebt()">+ Add an account</button>
     <div id="debt-helper" style="display:none;font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;line-height:1.6;">Every account needs a balance, APR, and minimum payment before you can continue.</div>
-    <button class="btn" id="btn-debt-next" onclick="go('s-score',2)" disabled>Next: Credit score →</button>
+    <button class="btn" id="btn-debt-next" onclick="go('s-score',2);saveEarlyProgress()" disabled>Next: Credit score →</button>
     <button class="btn-ghost" onclick="go('s-intro',0)">← Back</button>
   </div>
 </div>
@@ -605,7 +605,7 @@
         <div class="score-opt-range">Below 650</div>
       </div>
     </div>
-    <button class="btn" id="btn-score-next" onclick="go('s-budget',3)" disabled>Next: Your budget →</button>
+    <button class="btn" id="btn-score-next" onclick="go('s-budget',3);saveEarlyProgress()" disabled>Next: Your budget →</button>
     <button class="btn-ghost" onclick="go('s-debt',1)">← Back</button>
   </div>
 </div>
@@ -2508,6 +2508,33 @@ async function savePlannerProgressNow() {
 function savePlannerProgressDebounced() {
   clearTimeout(_progressDebounce)
   _progressDebounce = setTimeout(() => savePlannerProgressNow(), 400)
+}
+
+async function saveEarlyProgress() {
+  try {
+    const session = JSON.parse(localStorage.getItem('planner_session') || 'null')
+    const token = session && session.token
+    if (!token) return
+    await fetch('/.netlify/functions/planner-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_token: token,
+        debts: S.debts.map(d => ({...d})),
+        extra: 0,
+        budget: { income: 0, expenses: 0, obligations: 0 },
+        credit_score: S.creditScore || '',
+        method_locked: false,
+        locked_method: null,
+        months_completed: 0,
+        baseline_interest_saved: null,
+        baseline_min_months: null,
+        baseline_total_debt: null,
+        baseline_min_total_interest: null,
+        actual_interest_paid: 0,
+      }),
+    })
+  } catch(e) {}
 }
 
 // PDF generation removed
