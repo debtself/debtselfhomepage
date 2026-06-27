@@ -992,38 +992,51 @@ function pct(n) { return Math.round(n)+'%' }
 // ═══════════════════════════════════════
 //  DEBT ENTRY
 // ═══════════════════════════════════════
+function renderDebtCard(d, idx) {
+  const isLoan = d.type === 'loan'
+  const el = document.createElement('div')
+  el.className = 'dcard'; el.id = d.id
+  el.innerHTML = `
+    <div class="dcard-hdr">
+      <div class="dcard-lbl">Account ${idx}</div>
+      <button class="dcard-rm" onclick="removeDebt('${d.id}')">×</button>
+    </div>
+    <div class="type-toggle">
+      <button class="type-btn ${!isLoan?'active':''}" id="${d.id}-cc" onclick="setType('${d.id}','cc',this)">Credit Card</button>
+      <button class="type-btn ${isLoan?'active':''}" id="${d.id}-loan" onclick="setType('${d.id}','loan',this)">Personal Loan</button>
+    </div>
+    <div id="${d.id}-loan-hint" style="display:${isLoan?'block':'none'};font-size:11px;color:var(--muted);margin-top:6px;margin-bottom:14px;">Unsecured loans only. Personal loans, medical debt, and similar accounts. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
+    <div class="fl" style="margin-bottom:8px;">
+      <div class="fl-lbl">Account name</div>
+      <input class="fl-inp" type="text" value="${d.name||''}" placeholder="e.g. Chase Sapphire" style="font-family:var(--sans);font-size:15px;" oninput="updD('${d.id}','name',this.value)" />
+    </div>
+    <div class="grid2" id="${d.id}-fields">
+      ${isLoan ? `
+        <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" placeholder="12000" min="0" oninput="updD('${d.id}','balance',this.value);updateDebtPreview('${d.id}');checkDebtReady()" /></div>
+        <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" placeholder="8.99" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value);updateDebtPreview('${d.id}')" /></div>
+        <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" placeholder="350" min="0" oninput="updD('${d.id}','minPay',this.value);updateDebtPreview('${d.id}')" /></div>
+      ` : `
+        <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" placeholder="8500" min="0" oninput="updD('${d.id}','balance',this.value);updateUtil('${d.id}');updateDebtPreview('${d.id}');checkDebtReady()" /></div>
+        <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" value="${d.limit||''}" placeholder="10000" min="0" oninput="updD('${d.id}','limit',this.value);updateUtil('${d.id}')" /></div>
+        <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value);updateDebtPreview('${d.id}')" /></div>
+        <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" placeholder="auto" min="0" oninput="updD('${d.id}','minPay',this.value);updateDebtPreview('${d.id}')" /></div>
+      `}
+    </div>
+    <div class="debt-preview" id="${d.id}-preview"></div>
+    <div class="util-bar-wrap" id="${d.id}-util" style="display:${!isLoan&&Number(d.limit)>0&&Number(d.balance)>0?'block':'none'}">
+      <div class="util-bar-lbl"><span>Credit utilization</span><span id="${d.id}-upct">—</span></div>
+      <div class="util-track"><div class="util-fill" id="${d.id}-ufill" style="width:0%;background:var(--green)"></div></div>
+    </div>
+  `
+  return el
+}
+
 function addDebt() {
   debtCtr++
   const id='d'+debtCtr
-  S.debts.push({id,type:'cc',name:'',balance:'',limit:'',apr:'',minPay:''})
-  const el=document.createElement('div')
-  el.className='dcard'; el.id=id
-  el.innerHTML=`
-    <div class="dcard-hdr">
-      <div class="dcard-lbl">Account ${debtCtr}</div>
-      <button class="dcard-rm" onclick="removeDebt('${id}')">×</button>
-    </div>
-    <div class="type-toggle">
-      <button class="type-btn active" id="${id}-cc" onclick="setType('${id}','cc',this)">Credit Card</button>
-      <button class="type-btn" id="${id}-loan" onclick="setType('${id}','loan',this)">Personal Loan</button>
-    </div>
-    <div id="${id}-loan-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:6px;margin-bottom:14px;">Unsecured loans only. Personal loans, medical debt, and similar accounts. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
-    <div class="fl" style="margin-bottom:8px;">
-      <div class="fl-lbl">Account name</div>
-      <input class="fl-inp" type="text" placeholder="e.g. Chase Sapphire" style="font-family:var(--sans);font-size:15px;" oninput="updD('${id}','name',this.value)" />
-    </div>
-    <div class="grid2" id="${id}-fields">
-      <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" placeholder="8500" min="0" oninput="updD('${id}','balance',this.value);updateUtil('${id}');updateDebtPreview('${id}');checkDebtReady()" /></div>
-      <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" placeholder="10000" min="0" oninput="updD('${id}','limit',this.value);updateUtil('${id}')" /></div>
-      <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" placeholder="22.99" min="0" max="100" step="0.01" oninput="updD('${id}','apr',this.value);updateDebtPreview('${id}')" /></div>
-      <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" placeholder="auto" min="0" oninput="updD('${id}','minPay',this.value);updateDebtPreview('${id}')" /></div>
-    </div>
-    <div class="debt-preview" id="${id}-preview"></div>
-    <div class="util-bar-wrap" id="${id}-util">
-      <div class="util-bar-lbl"><span>Credit utilization</span><span id="${id}-upct">—</span></div>
-      <div class="util-track"><div class="util-fill" id="${id}-ufill" style="width:0%;background:var(--green)"></div></div>
-    </div>
-  `
+  const d = {id,type:'cc',name:'',balance:'',limit:'',apr:'',minPay:''}
+  S.debts.push(d)
+  const el = renderDebtCard(d, debtCtr)
   document.getElementById('debt-cards').appendChild(el)
   updateBadge(); checkDebtReady()
 }
@@ -2458,6 +2471,38 @@ function hydrateAndShowResults(progress) {
   go('s-results', 6)
 }
 
+function hydratePartialProgress(progress) {
+  if (Array.isArray(progress.debts) && progress.debts.length) {
+    progress.debts.forEach(d => {
+      debtCtr++
+      S.debts.push(d)
+      const el = renderDebtCard(d, debtCtr)
+      document.getElementById('debt-cards').appendChild(el)
+      if (d.type !== 'loan') updateUtil(d.id)
+      updateDebtPreview(d.id)
+    })
+    updateBadge(); checkDebtReady()
+  }
+
+  if (progress.credit_score) {
+    S.creditScore = progress.credit_score
+    document.querySelectorAll('.score-opt').forEach(el => {
+      if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(`'${progress.credit_score}'`)) {
+        el.classList.add('sel')
+        document.getElementById('btn-score-next').disabled = false
+      }
+    })
+  }
+
+  if (progress.credit_score) {
+    go('s-budget', 3)
+  } else if (Array.isArray(progress.debts) && progress.debts.length) {
+    go('s-score', 2)
+  } else {
+    go('s-debt', 1)
+  }
+}
+
 // ═══════════════════════════════════════
 //  SERVER-SIDE PROGRESS PERSISTENCE
 // ═══════════════════════════════════════
@@ -2686,43 +2731,9 @@ function resumeProgress() {
       data.debts.forEach(d => {
         debtCtr++
         S.debts.push(d)
-        const isLoan = d.type === 'loan'
-        const el = document.createElement('div')
-        el.className = 'dcard'; el.id = d.id
-        el.innerHTML = `
-          <div class="dcard-hdr">
-            <div class="dcard-lbl">Account ${debtCtr}</div>
-            <button class="dcard-rm" onclick="removeDebt('${d.id}')">×</button>
-          </div>
-          <div class="type-toggle">
-            <button class="type-btn ${!isLoan?'active':''}" id="${d.id}-cc" onclick="setType('${d.id}','cc',this)">Credit Card</button>
-            <button class="type-btn ${isLoan?'active':''}" id="${d.id}-loan" onclick="setType('${d.id}','loan',this)">Personal Loan</button>
-          </div>
-          <div id="${d.id}-loan-hint" style="display:${isLoan?'block':'none'};font-size:11px;color:var(--muted);margin-top:6px;">Unsecured loans only. Personal loans, medical debt, and similar accounts. For auto loans or mortgages, add those as a monthly obligation in the next step instead.</div>
-          <div class="fl" style="margin-bottom:8px;">
-            <div class="fl-lbl">Account name</div>
-            <input class="fl-inp" type="text" value="${d.name||''}" style="font-family:var(--sans);font-size:15px;" oninput="updD('${d.id}','name',this.value)" />
-          </div>
-          <div class="grid2" id="${d.id}-fields">
-            ${isLoan ? `
-              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);updateDebtPreview('${d.id}');checkDebtReady()" /></div>
-              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value);updateDebtPreview('${d.id}')" /></div>
-              <div class="fl"><div class="fl-lbl">Monthly payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value);updateDebtPreview('${d.id}')" /></div>
-            ` : `
-              <div class="fl"><div class="fl-lbl">Balance ($)</div><input class="fl-inp" type="number" value="${d.balance||''}" min="0" oninput="updD('${d.id}','balance',this.value);updateUtil('${d.id}');updateDebtPreview('${d.id}');checkDebtReady()" /></div>
-              <div class="fl"><div class="fl-lbl">Credit limit ($)</div><input class="fl-inp" type="number" value="${d.limit||''}" min="0" oninput="updD('${d.id}','limit',this.value);updateUtil('${d.id}')" /></div>
-              <div class="fl"><div class="fl-lbl">APR (%)</div><input class="fl-inp" type="number" value="${d.apr||''}" min="0" max="100" step="0.01" oninput="updD('${d.id}','apr',this.value);updateDebtPreview('${d.id}')" /></div>
-              <div class="fl"><div class="fl-lbl">Min payment ($)</div><input class="fl-inp" type="number" value="${d.minPay||''}" min="0" oninput="updD('${d.id}','minPay',this.value);updateDebtPreview('${d.id}')" /></div>
-            `}
-          </div>
-          <div class="debt-preview" id="${d.id}-preview"></div>
-          <div class="util-bar-wrap" id="${d.id}-util" style="display:${!isLoan&&Number(d.limit)>0&&Number(d.balance)>0?'block':'none'}">
-            <div class="util-bar-lbl"><span>Credit utilization</span><span id="${d.id}-upct"></span></div>
-            <div class="util-track"><div class="util-fill" id="${d.id}-ufill" style="width:0%;background:var(--green)"></div></div>
-          </div>
-        `
+        const el = renderDebtCard(d, debtCtr)
         document.getElementById('debt-cards').appendChild(el)
-        if (!isLoan) updateUtil(d.id)
+        if (d.type !== 'loan') updateUtil(d.id)
         updateDebtPreview(d.id)
       })
       updateBadge(); checkDebtReady()
@@ -2805,7 +2816,11 @@ window.addEventListener('load', async () => {
       if (res.ok) {
         const json = await res.json()
         if (json.exists) {
-          hydrateAndShowResults(json.progress)
+          if (json.progress.baseline_total_debt != null) {
+            hydrateAndShowResults(json.progress)
+          } else {
+            hydratePartialProgress(json.progress)
+          }
           return
         }
       }
