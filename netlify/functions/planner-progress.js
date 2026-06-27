@@ -46,7 +46,7 @@ exports.handler = async (event) => {
 
     const { data: progress, error: progressError } = await supabase
       .from('planner_progress')
-      .select('debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid, updated_at')
+      .select('debts, extra, method_locked, locked_method, months_completed, budget, credit_score, draft_budget, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid, updated_at')
       .eq('session_token', session_token)
       .maybeSingle()
 
@@ -76,6 +76,7 @@ exports.handler = async (event) => {
           baseline_total_debt: progress.baseline_total_debt,
           baseline_min_total_interest: progress.baseline_min_total_interest,
           actual_interest_paid: progress.actual_interest_paid,
+          draft_budget: progress.draft_budget,
           updated_at: progress.updated_at,
         },
       }),
@@ -119,7 +120,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Invalid request' }) }
   }
 
-  const { session_token, debts, extra, method_locked, locked_method, months_completed, budget, credit_score, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid } = body
+  const { session_token, debts, extra, method_locked, locked_method, months_completed, budget, credit_score, draft_budget, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid } = body
 
   if (!session_token) {
     return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'session_token is required' }) }
@@ -148,7 +149,7 @@ exports.handler = async (event) => {
   // Fetch existing row before writing
   const { data: existing } = await supabase
     .from('planner_progress')
-    .select('method_locked, locked_method, months_completed, debts, budget, credit_score, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid')
+    .select('method_locked, locked_method, months_completed, debts, budget, credit_score, draft_budget, baseline_interest_saved, baseline_min_months, baseline_total_debt, baseline_min_total_interest, actual_interest_paid')
     .eq('session_token', session_token)
     .maybeSingle()
 
@@ -181,6 +182,10 @@ exports.handler = async (event) => {
 
   const savedCreditScore = (normalizedCreditScore === '' && existing?.credit_score) ? existing.credit_score : normalizedCreditScore
 
+  const savedDraftBudget = (draft_budget && typeof draft_budget === 'object')
+    ? draft_budget
+    : (existing?.draft_budget ?? null)
+
   const incomingDebtsIsEmpty = !Array.isArray(debts) || debts.length === 0
   const savedDebts = (incomingDebtsIsEmpty && Array.isArray(existing?.debts) && existing.debts.length > 0) ? existing.debts : debts
 
@@ -193,6 +198,7 @@ exports.handler = async (event) => {
     months_completed: savedMonthsCompleted,
     budget: savedBudget,
     credit_score: savedCreditScore,
+    draft_budget: savedDraftBudget,
     baseline_interest_saved: savedBaselineInterestSaved,
     baseline_min_months: savedBaselineMinMonths,
     baseline_total_debt: savedBaselineTotalDebt,

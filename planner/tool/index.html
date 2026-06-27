@@ -624,15 +624,15 @@
       <div class="budget-q-title">How often do you get paid?</div>
       <div class="budget-q-sub">Most people think in paychecks not monthly totals. Enter whatever feels natural to you.</div>
       <div class="freq-options">
-        <div class="freq-opt" onclick="selectFreq('weekly',this)">Every week</div>
-        <div class="freq-opt" onclick="selectFreq('biweekly',this)">Every 2 weeks</div>
-        <div class="freq-opt" onclick="selectFreq('twicemonthly',this)">Twice a month</div>
-        <div class="freq-opt" onclick="selectFreq('monthly',this)">Once a month</div>
+        <div class="freq-opt" onclick="selectFreq('weekly',this);saveDraftBudgetDebounced()">Every week</div>
+        <div class="freq-opt" onclick="selectFreq('biweekly',this);saveDraftBudgetDebounced()">Every 2 weeks</div>
+        <div class="freq-opt" onclick="selectFreq('twicemonthly',this);saveDraftBudgetDebounced()">Twice a month</div>
+        <div class="freq-opt" onclick="selectFreq('monthly',this);saveDraftBudgetDebounced()">Once a month</div>
       </div>
       <div class="budget-q-title" style="font-size:17px;margin-bottom:6px;" id="paycheck-q">How much is each paycheck after taxes?</div>
       <div class="amount-inp-wrap">
         <span class="amount-prefix">$</span>
-        <input class="amount-inp" type="number" id="paycheck-amt" placeholder="0" min="0" oninput="updatePaycheck()" />
+        <input class="amount-inp" type="number" id="paycheck-amt" placeholder="0" min="0" oninput="updatePaycheck();saveDraftBudgetDebounced()" />
       </div>
       <div class="monthly-equiv" id="monthly-equiv"></div>
       <div style="margin-top:14px;">
@@ -640,7 +640,7 @@
         <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6;">Lenders use gross pay (before taxes and deductions) to calculate DTI since it's comparable across different tax situations — usually the largest number on your pay stub. For example, if your stub shows $1,500 before deductions but you take home $1,200, enter $1,500. Totally fine to skip if you don't have it handy.</div>
         <div class="amount-inp-wrap">
           <span class="amount-prefix">$</span>
-          <input class="amount-inp" type="number" id="gross-paycheck-amt" placeholder="0" min="0" oninput="S.grossPaycheckAmt=Number(this.value)||0;updatePaycheck()" />
+          <input class="amount-inp" type="number" id="gross-paycheck-amt" placeholder="0" min="0" oninput="S.grossPaycheckAmt=Number(this.value)||0;updatePaycheck();saveDraftBudgetDebounced()" />
         </div>
         <div id="gross-warning" style="display:none;font-size:11px;color:var(--red);margin-top:6px;line-height:1.5;">Gross pay should be higher than your take-home pay — double check this number.</div>
       </div>
@@ -651,35 +651,35 @@
     <div class="budget-cats">
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Housing</div><div class="budget-cat-hint">Rent or mortgage payment only</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-housing" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-housing" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Utilities</div><div class="budget-cat-hint">Electric, gas, water, internet</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-utilities" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-utilities" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Phone</div><div class="budget-cat-hint">Monthly cell phone bill</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-phone" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-phone" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Insurance</div><div class="budget-cat-hint">Health, auto, renters or home</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-insurance" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-insurance" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Transportation</div><div class="budget-cat-hint">Car payment, gas, transit, parking</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-transport" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-transport" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Groceries</div><div class="budget-cat-hint">Food and household essentials only</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-groceries" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-groceries" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Dining and entertainment</div><div class="budget-cat-hint">Restaurants, bars, streaming, events</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-dining" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-dining" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
       <div class="budget-cat">
         <div class="budget-cat-info"><div class="budget-cat-name">Everything else</div><div class="budget-cat-hint">Clothing, personal care, miscellaneous</div></div>
-        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-other" placeholder="0" min="0" oninput="checkBudgetReady()" /></div>
+        <div class="budget-cat-inp-wrap"><span class="budget-cat-prefix">$</span><input class="budget-cat-inp" type="number" id="b-other" placeholder="0" min="0" oninput="checkBudgetReady();saveDraftBudgetDebounced()" /></div>
       </div>
     </div>
 
@@ -1244,14 +1244,15 @@ function addOblig() {
   const row=document.createElement('div')
   row.className='oblig-row'; row.id=id
   row.innerHTML=`
-    <input class="oblig-name" type="text" placeholder="e.g. Student loan, mortgage" oninput="updOblig('${id}','name',this.value)" />
+    <input class="oblig-name" type="text" placeholder="e.g. Student loan, mortgage" oninput="updOblig('${id}','name',this.value);saveDraftBudgetDebounced()" />
     <div class="oblig-amount-wrap">
       <span class="oblig-prefix">$</span>
-      <input class="oblig-amount" type="number" placeholder="0" min="0" oninput="updOblig('${id}','amount',this.value)" />
+      <input class="oblig-amount" type="number" placeholder="0" min="0" oninput="updOblig('${id}','amount',this.value);saveDraftBudgetDebounced()" />
     </div>
     <button class="oblig-rm" onclick="removeOblig('${id}')">×</button>
   `
   document.getElementById('oblig-list').appendChild(row)
+  saveDraftBudgetDebounced()
 }
 
 function updOblig(id,field,val) {
@@ -1262,6 +1263,7 @@ function updOblig(id,field,val) {
 function removeOblig(id) {
   S.obligations=S.obligations.filter(x=>x.id!==id)
   const el=document.getElementById(id); if(el) el.remove()
+  saveDraftBudgetDebounced()
 }
 
 // ═══════════════════════════════════════
@@ -2494,6 +2496,46 @@ function hydratePartialProgress(progress) {
     })
   }
 
+  if (progress.draft_budget) {
+    const db = progress.draft_budget
+    if (db.paycheckFreq) {
+      S.paycheckFreq = db.paycheckFreq
+      S.paycheckAmt = db.paycheckAmt || 0
+      S.grossPaycheckAmt = db.grossPaycheckAmt || 0
+      document.querySelectorAll('.freq-opt').forEach(el => {
+        if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(`'${db.paycheckFreq}'`)) el.classList.add('sel')
+      })
+      const paEl = document.getElementById('paycheck-amt')
+      if (paEl) paEl.value = db.paycheckAmt || ''
+      const grossEl = document.getElementById('gross-paycheck-amt')
+      if (grossEl) grossEl.value = db.grossPaycheckAmt || ''
+      updatePaycheck()
+    }
+    const fields = ['housing','utilities','phone','insurance','transport','groceries','dining','other']
+    fields.forEach(f => {
+      const el = document.getElementById('b-' + f)
+      if (el && db[f]) el.value = db[f]
+    })
+    if (Array.isArray(db.obligations) && db.obligations.length) {
+      db.obligations.forEach(o => {
+        obligCtr++
+        S.obligations.push(o)
+        const row = document.createElement('div')
+        row.className = 'oblig-row'; row.id = o.id
+        row.innerHTML = `
+          <input class="oblig-name" type="text" value="${o.name||''}" placeholder="e.g. Student loan, mortgage" oninput="updOblig('${o.id}','name',this.value);saveDraftBudgetDebounced()" />
+          <div class="oblig-amount-wrap">
+            <span class="oblig-prefix">$</span>
+            <input class="oblig-amount" type="number" value="${o.amount||''}" placeholder="0" min="0" oninput="updOblig('${o.id}','amount',this.value);saveDraftBudgetDebounced()" />
+          </div>
+          <button class="oblig-rm" onclick="removeOblig('${o.id}')">×</button>
+        `
+        document.getElementById('oblig-list').appendChild(row)
+      })
+    }
+    checkBudgetReady()
+  }
+
   if (progress.credit_score) {
     go('s-budget', 3)
   } else if (Array.isArray(progress.debts) && progress.debts.length) {
@@ -2566,6 +2608,55 @@ function deleteServerProgress() {
   } catch(e) {
     console.error('Progress delete error:', e)
   }
+}
+
+function _buildDraftBudgetPayload() {
+  return {
+    paycheckFreq: S.paycheckFreq,
+    paycheckAmt: S.paycheckAmt,
+    grossPaycheckAmt: S.grossPaycheckAmt,
+    housing: Number(document.getElementById('b-housing')?.value) || 0,
+    utilities: Number(document.getElementById('b-utilities')?.value) || 0,
+    phone: Number(document.getElementById('b-phone')?.value) || 0,
+    insurance: Number(document.getElementById('b-insurance')?.value) || 0,
+    transport: Number(document.getElementById('b-transport')?.value) || 0,
+    groceries: Number(document.getElementById('b-groceries')?.value) || 0,
+    dining: Number(document.getElementById('b-dining')?.value) || 0,
+    other: Number(document.getElementById('b-other')?.value) || 0,
+    obligations: S.obligations.map(o => ({...o})),
+  }
+}
+
+let _draftBudgetDebounce = null
+function saveDraftBudgetDebounced() {
+  clearTimeout(_draftBudgetDebounce)
+  _draftBudgetDebounce = setTimeout(async () => {
+    try {
+      const session = JSON.parse(localStorage.getItem('planner_session') || 'null')
+      const token = session && session.token
+      if (!token) return
+      await fetch('/.netlify/functions/planner-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_token: token,
+          debts: S.debts.map(d => ({...d})),
+          extra: 0,
+          budget: { income: 0, expenses: 0, obligations: 0 },
+          credit_score: S.creditScore || '',
+          method_locked: false,
+          locked_method: null,
+          months_completed: 0,
+          baseline_interest_saved: null,
+          baseline_min_months: null,
+          baseline_total_debt: null,
+          baseline_min_total_interest: null,
+          actual_interest_paid: 0,
+          draft_budget: _buildDraftBudgetPayload(),
+        }),
+      })
+    } catch(e) { console.error('Draft budget save failed:', e) }
+  }, 600)
 }
 
 async function saveEarlyProgress() {
