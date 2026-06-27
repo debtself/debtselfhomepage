@@ -398,12 +398,25 @@
     banner.textContent = 'Your purchase is confirmed. We\'re finishing setup, this can take a moment. If this doesn\'t update shortly, check your email for your access code or contact support@debtself.com.'
   }
 
+  function updateCarouselDots(index) {
+    document.querySelectorAll('.carousel-dots .dot').forEach(function(dot, i) {
+      dot.classList.toggle('active', i === index)
+    })
+  }
+
   function scrollCarousel(dir) {
     const carousel = document.getElementById('carousel')
     const slide = carousel.querySelector('.slide')
     const slideWidth = slide.getBoundingClientRect().width
     carousel.scrollBy({ left: dir * (slideWidth + 12), behavior: 'smooth' })
   }
+
+  document.getElementById('carousel').addEventListener('scroll', function() {
+    const slide = this.querySelector('.slide')
+    const slideWidth = slide.getBoundingClientRect().width + 12
+    const index = Math.round(this.scrollLeft / slideWidth)
+    updateCarouselDots(index)
+  }, { passive: true })
 
   function openLightbox(btn) {
     const img = btn.closest('.slide').querySelector('img')
