@@ -305,6 +305,14 @@ details[open] summary::after{transform:rotate(90deg);color:var(--signal);}
 .footer-wm span{font-weight:700;font-size:16px;color:var(--paper);letter-spacing:-0.02em;}
 .footer-tagline{font-family:'Instrument Serif',serif;font-style:italic;font-size:13px;color:var(--dust);}
 .footer-legal{font-size:11px;color:rgba(217,210,194,0.3);line-height:1.7;max-width:500px;}
+.footer-verified{max-width:360px;color:rgba(217,210,194,0.52);}
+.footer-verified h2{font-size:12px;font-weight:700;color:var(--paper);letter-spacing:-0.01em;margin:0 0 8px;}
+.footer-verified p{font-size:12px;line-height:1.6;margin:0 0 14px;}
+.footer-verified-links{display:flex;flex-wrap:wrap;gap:10px;}
+.footer-verified-link{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(217,210,194,0.08);border-radius:8px;padding:8px 11px;color:rgba(217,210,194,0.62);font-size:12px;font-weight:600;text-decoration:none;transition:color 0.15s ease,border-color 0.15s ease,background 0.15s ease;}
+.footer-verified-link:hover,.footer-verified-link:focus-visible{color:var(--signal);border-color:rgba(255,77,46,0.28);background:rgba(255,77,46,0.05);}
+.footer-verified-link:focus-visible{outline:2px solid rgba(255,77,46,0.45);outline-offset:3px;}
+.footer-verified-link svg{width:16px;height:16px;flex-shrink:0;}
 .wm-svg{width:16px;height:19px;}
 .wm-svg-xl{width:56px;height:66px;}
 
@@ -983,6 +991,28 @@ rdt('track', 'PageVisit');
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
     </a>
   </div>
+  <section class="footer-verified" aria-labelledby="footer-verified-title">
+    <h2 id="footer-verified-title">Verified Business</h2>
+    <p>Verified by Trustpilot and Google. We welcome honest feedback from every customer.</p>
+    <!-- TODO: This block can later host verified review widgets, aggregate ratings, or testimonials. -->
+    <div class="footer-verified-links" aria-label="Verified business profiles">
+      <a class="footer-verified-link" href="https://www.trustpilot.com/review/debtself.com" target="_blank" rel="noopener noreferrer" aria-label="Open debtself Trustpilot profile in a new tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path fill="#00B67A" d="M12 2.3l2.99 6.05 6.68.97-4.84 4.72 1.14 6.65L12 17.55l-5.97 3.14 1.14-6.65-4.84-4.72 6.68-.97L12 2.3z"/>
+        </svg>
+        Trustpilot
+      </a>
+      <a class="footer-verified-link" href="https://g.page/r/CZda_DJsl6RBEAI/review" target="_blank" rel="noopener noreferrer" aria-label="Open debtself Google profile in a new tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path fill="#4285F4" d="M21.6 12.23c0-.78-.07-1.53-.2-2.23H12v4.22h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.89-1.74 2.98-4.31 2.98-7.52z"/>
+          <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.43l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.59A10 10 0 0 0 12 22z"/>
+          <path fill="#FBBC05" d="M6.41 13.9a6.02 6.02 0 0 1 0-3.8V7.51H3.06a10 10 0 0 0 0 8.98l3.35-2.59z"/>
+          <path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.82 1.5l2.87-2.87C16.95 2.99 14.69 2 12 2a10 10 0 0 0-8.94 5.51l3.35 2.59C7.2 7.74 9.4 5.98 12 5.98z"/>
+        </svg>
+        Google
+      </a>
+    </div>
+  </section>
   <div class="footer-legal">
     debtself is an educational platform providing tools, scripts, and guidance for consumers navigating debt settlement. debtself is not a law firm, credit counseling agency, or debt settlement company. Use of this platform does not constitute legal or financial advice. Results vary by individual situation. debtself does not guarantee specific settlement outcomes. Consult a qualified professional for personalized legal or financial advice.
     <div style="margin-top:10px;">
