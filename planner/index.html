@@ -136,6 +136,18 @@
     .section-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; line-height: 1.35; }
     .section-body { font-size: 14px; color: #3A352F; line-height: 1.6; }
 
+    /* COMPARISON */
+    .comparison-card { margin-top: 18px; background: var(--paper); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+    .comparison-head, .comparison-row { display: grid; grid-template-columns: 1fr 1fr; }
+    .comparison-head { background: rgba(10,14,18,0.03); border-bottom: 1px solid var(--hairline); }
+    .comparison-title { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 13px 14px; }
+    .comparison-title.highlight { color: var(--signal); }
+    .comparison-row { border-bottom: 1px solid var(--hairline); }
+    .comparison-row:last-child { border-bottom: 0; }
+    .comparison-cell { min-width: 0; padding: 13px 14px; font-size: 13px; line-height: 1.4; color: #3A352F; }
+    .comparison-cell + .comparison-cell, .comparison-title + .comparison-title { border-left: 1px solid var(--hairline); }
+    .comparison-cell.highlight { font-weight: 700; color: var(--ink); }
+
     /* CAROUSEL */
     .carousel-wrap { position: relative; }
     .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding: 0; margin: 0; -webkit-overflow-scrolling: touch; }
@@ -292,6 +304,41 @@
       />
       <div class="error-msg" id="recovery-msg"></div>
       <button class="code-submit" id="recovery-btn" onclick="sendRecovery()">Send recovery link</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Most debt calculators stop here. debtself Planner keeps going.</div>
+    <div class="section-body">Most debt calculators give you one answer. debtself Planner gives you a live payoff system that updates as your debt changes.</div>
+    <div class="comparison-card" aria-label="Comparison between most debt calculators and debtself Planner">
+      <div class="comparison-head">
+        <div class="comparison-title">Most Debt Calculators</div>
+        <div class="comparison-title highlight">debtself Planner</div>
+      </div>
+      <div class="comparison-row">
+        <div class="comparison-cell">One calculation</div>
+        <div class="comparison-cell highlight">Ongoing payoff system</div>
+      </div>
+      <div class="comparison-row">
+        <div class="comparison-cell">One payoff method</div>
+        <div class="comparison-cell highlight">Compares every strategy</div>
+      </div>
+      <div class="comparison-row">
+        <div class="comparison-cell">Static results</div>
+        <div class="comparison-cell highlight">Updates every month</div>
+      </div>
+      <div class="comparison-row">
+        <div class="comparison-cell">Generic formulas</div>
+        <div class="comparison-cell highlight">Built from your balances, APRs &amp; budget</div>
+      </div>
+      <div class="comparison-row">
+        <div class="comparison-cell">No progress tracking</div>
+        <div class="comparison-cell highlight">Live debt-free countdown</div>
+      </div>
+      <div class="comparison-row">
+        <div class="comparison-cell">No evolving plan</div>
+        <div class="comparison-cell highlight">Recalculates as you make progress</div>
+      </div>
     </div>
   </div>
 
